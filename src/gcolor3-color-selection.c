@@ -142,7 +142,6 @@ struct _Gcolor3ColorSelectionPrivate
 
 
 static void gcolor3_color_selection_destroy         (GtkWidget               *widget);
-static void gcolor3_color_selection_finalize        (GObject                 *object);
 static void update_color                            (Gcolor3ColorSelection   *colorsel);
 static void gcolor3_color_selection_set_property    (GObject                 *object,
                                                      guint                    prop_id,
@@ -241,7 +240,6 @@ gcolor3_color_selection_class_init (Gcolor3ColorSelectionClass *klass)
   GtkWidgetClass *widget_class;
 
   gobject_class = G_OBJECT_CLASS (klass);
-  gobject_class->finalize = gcolor3_color_selection_finalize;
   gobject_class->set_property = gcolor3_color_selection_set_property;
   gobject_class->get_property = gcolor3_color_selection_get_property;
 
@@ -468,12 +466,6 @@ gcolor3_color_selection_init (Gcolor3ColorSelection *colorsel)
 }
 
 /* GObject methods */
-static void
-gcolor3_color_selection_finalize (GObject *object)
-{
-  G_OBJECT_CLASS (gcolor3_color_selection_parent_class)->finalize (object);
-}
-
 static void
 gcolor3_color_selection_set_property (GObject         *object,
                                       guint            prop_id,
