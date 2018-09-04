@@ -43,26 +43,6 @@ typedef struct _Gcolor3ColorSelection        Gcolor3ColorSelection;
 typedef struct _Gcolor3ColorSelectionPrivate Gcolor3ColorSelectionPrivate;
 typedef struct _Gcolor3ColorSelectionClass   Gcolor3ColorSelectionClass;
 
-/**
- * Gcolor3ColorSelectionChangePaletteFunc:
- * @colors: (array length=n_colors): Array of colors
- * @n_colors: Number of colors in the array
- */
-typedef void (* Gcolor3ColorSelectionChangePaletteFunc) (const GdkRGBA *colors,
-                                                         gint           n_colors);
-
-/**
- * Gcolor3ColorSelectionChangePaletteWithScreenFunc:
- * @screen:
- * @colors: (array length=n_colors): Array of colors
- * @n_colors: Number of colors in the array
- *
- * Since: 2.2
- */
-typedef void (* Gcolor3ColorSelectionChangePaletteWithScreenFunc) (GdkScreen     *screen,
-							           const GdkRGBA *colors,
-							           gint           n_colors);
-
 struct _Gcolor3ColorSelection
 {
   GtkBox parent_instance;
@@ -98,11 +78,6 @@ GType      gcolor3_color_selection_get_type                (void) G_GNUC_CONST;
 GtkWidget *gcolor3_color_selection_new                     (void);
 gboolean   gcolor3_color_selection_get_has_opacity_control (Gcolor3ColorSelection *colorsel);
 void       gcolor3_color_selection_set_has_opacity_control (Gcolor3ColorSelection *colorsel,
-							    gboolean               has_opacity);
-gboolean   gcolor3_color_selection_get_has_palette         (Gcolor3ColorSelection *colorsel);
-void       gcolor3_color_selection_set_has_palette         (Gcolor3ColorSelection *colorsel,
-							    gboolean               has_palette);
-
 
 void     gcolor3_color_selection_set_current_alpha   (Gcolor3ColorSelection *colorsel,
 						      guint16                alpha);
@@ -121,14 +96,6 @@ void     gcolor3_color_selection_get_previous_rgba   (Gcolor3ColorSelection *col
                                                       GdkRGBA               *rgba);
 
 gboolean gcolor3_color_selection_is_adjusting        (Gcolor3ColorSelection *colorsel);
-
-gboolean gcolor3_color_selection_palette_from_string (const gchar      *str,
-                                                      GdkRGBA         **colors,
-                                                      gint             *n_colors);
-gchar*   gcolor3_color_selection_palette_to_string   (const GdkRGBA    *colors,
-                                                      gint              n_colors);
-
-Gcolor3ColorSelectionChangePaletteWithScreenFunc gcolor3_color_selection_set_change_palette_with_screen_hook (Gcolor3ColorSelectionChangePaletteWithScreenFunc func);
 
 void     gcolor3_color_selection_set_current_color   (Gcolor3ColorSelection *colorsel,
                                                       const GdkRGBA         *color);
