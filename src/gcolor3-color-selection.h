@@ -76,8 +76,6 @@ struct _Gcolor3ColorSelectionClass
 
 GType      gcolor3_color_selection_get_type                (void) G_GNUC_CONST;
 GtkWidget *gcolor3_color_selection_new                     (void);
-gboolean   gcolor3_color_selection_get_has_opacity_control (Gcolor3ColorSelection *colorsel);
-void       gcolor3_color_selection_set_has_opacity_control (Gcolor3ColorSelection *colorsel,
 
 void     gcolor3_color_selection_set_current_alpha   (Gcolor3ColorSelection *colorsel,
 						      guint16                alpha);

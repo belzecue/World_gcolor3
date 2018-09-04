@@ -88,7 +88,6 @@ enum {
 
 enum {
   PROP_0,
-  PROP_HAS_OPACITY_CONTROL,
   PROP_CURRENT_ALPHA,
   PROP_CURRENT_RGBA
 };
@@ -107,7 +106,6 @@ enum {
 
 struct _Gcolor3ColorSelectionPrivate
 {
-  guint has_opacity       : 1;
   guint changing          : 1;
   guint default_set       : 1;
   guint default_alpha_set : 1;
@@ -140,9 +138,6 @@ struct _Gcolor3ColorSelectionPrivate
   guint32    grab_time;
   GdkDevice *keyboard_device;
   GdkDevice *pointer_device;
-
-  /* Connection to settings */
-  gulong settings_connection;
 };
 
 
@@ -158,8 +153,6 @@ static void gcolor3_color_selection_get_property    (GObject                 *ob
                                                      GValue                  *value,
                                                      GParamSpec              *pspec);
 
-static void gcolor3_color_selection_unrealize       (GtkWidget               *widget);
-static void gcolor3_color_selection_show_all        (GtkWidget               *widget);
 static gboolean gcolor3_color_selection_grab_broken (GtkWidget               *widget,
                                                      GdkEventGrabBroken      *event);
 
@@ -254,20 +247,7 @@ gcolor3_color_selection_class_init (Gcolor3ColorSelectionClass *klass)
 
   widget_class = GTK_WIDGET_CLASS (klass);
   widget_class->destroy = gcolor3_color_selection_destroy;
-  widget_class->unrealize = gcolor3_color_selection_unrealize;
-  widget_class->show_all = gcolor3_color_selection_show_all;
   widget_class->grab_broken_event = gcolor3_color_selection_grab_broken;
-
-  g_object_class_install_property (gobject_class,
-                                   PROP_HAS_OPACITY_CONTROL,
-                                   g_param_spec_boolean ("has-opacity-control",
-                                                         P_("Has Opacity Control"),
-                                                         P_("Whether the color selector should allow setting opacity"),
-                                                         FALSE,
-                                                         G_PARAM_READWRITE|
-                                                         G_PARAM_STATIC_NAME|
-                                                         G_PARAM_STATIC_NICK|
-                                                         G_PARAM_STATIC_BLURB));
 
   g_object_class_install_property (gobject_class,
                                    PROP_CURRENT_ALPHA,
@@ -476,15 +456,6 @@ gcolor3_color_selection_init (Gcolor3ColorSelection *colorsel)
 
   gtk_widget_show_all (top_hbox);
 
-  /* hide unused stuff */
-
-  if (priv->has_opacity == FALSE)
-    {
-      gtk_widget_hide (priv->opacity_label);
-      gtk_widget_hide (priv->opacity_slider);
-      gtk_widget_hide (priv->opacity_entry);
-    }
-
   atk_obj = gtk_widget_get_accessible (priv->triangle_colorsel);
   if (GTK_IS_ACCESSIBLE (atk_obj))
     {
@@ -513,10 +484,6 @@ gcolor3_color_selection_set_property (GObject         *object,
 
   switch (prop_id)
     {
-    case PROP_HAS_OPACITY_CONTROL:
-      gcolor3_color_selection_set_has_opacity_control (colorsel,
-                                                       g_value_get_boolean (value));
-      break;
     case PROP_CURRENT_ALPHA:
       gcolor3_color_selection_set_current_alpha (colorsel, g_value_get_uint (value));
       break;
@@ -540,9 +507,6 @@ gcolor3_color_selection_get_property (GObject     *object,
 
   switch (prop_id)
     {
-    case PROP_HAS_OPACITY_CONTROL:
-      g_value_set_boolean (value, gcolor3_color_selection_get_has_opacity_control (colorsel));
-      break;
     case PROP_CURRENT_ALPHA:
       g_value_set_uint (value, gcolor3_color_selection_get_current_alpha (colorsel));
       break;
@@ -575,28 +539,6 @@ gcolor3_color_selection_destroy (GtkWidget *widget)
     }
 
   GTK_WIDGET_CLASS (gcolor3_color_selection_parent_class)->destroy (widget);
-}
-
-static void
-gcolor3_color_selection_unrealize (GtkWidget *widget)
-{
-  Gcolor3ColorSelection *colorsel = GCOLOR3_COLOR_SELECTION (widget);
-  Gcolor3ColorSelectionPrivate *priv = colorsel->private_data;
-  GtkSettings *settings = gtk_widget_get_settings (widget);
-
-  g_signal_handler_disconnect (settings, priv->settings_connection);
-
-  GTK_WIDGET_CLASS (gcolor3_color_selection_parent_class)->unrealize (widget);
-}
-
-/* We override show-all since we have internal widgets that
- * shouldn’t be shown when you call show_all(), like the
- * opacity sliders.
- */
-static void
-gcolor3_color_selection_show_all (GtkWidget *widget)
-{
-  gtk_widget_show (widget);
 }
 
 static gboolean
@@ -769,7 +711,7 @@ color_sample_drag_handle (GtkWidget             *widget,
   vals[0] = colsrc[COLORSEL_RED] * 0xffff;
   vals[1] = colsrc[COLORSEL_GREEN] * 0xffff;
   vals[2] = colsrc[COLORSEL_BLUE] * 0xffff;
-  vals[3] = priv->has_opacity ? colsrc[COLORSEL_OPACITY] * 0xffff : 0xffff;
+  vals[3] = colsrc[COLORSEL_OPACITY] * 0xffff;
 
   gtk_selection_data_set (selection_data,
                           gdk_atom_intern_static_string ("application/x-color"),
@@ -812,21 +754,17 @@ color_sample_draw_sample (Gcolor3ColorSelection *colorsel,
   width = gtk_widget_get_allocated_width (da);
   height = gtk_widget_get_allocated_height (da);
 
-  if (priv->has_opacity)
-    {
-      /* Draw checks in background */
+  /* Draw checks in background */
+  cairo_set_source_rgb (cr, 0.5, 0.5, 0.5);
+  cairo_rectangle (cr, 0, 0, width, height);
+  cairo_fill (cr);
 
-      cairo_set_source_rgb (cr, 0.5, 0.5, 0.5);
-      cairo_rectangle (cr, 0, 0, width, height);
-      cairo_fill (cr);
-
-      cairo_set_source_rgb (cr, 0.75, 0.75, 0.75);
-      for (x = goff & -CHECK_SIZE; x < goff + width; x += CHECK_SIZE)
-        for (y = 0; y < height; y += CHECK_SIZE)
-          if ((x / CHECK_SIZE + y / CHECK_SIZE) % 2 == 0)
-            cairo_rectangle (cr, x - goff, y, CHECK_SIZE, CHECK_SIZE);
-      cairo_fill (cr);
-    }
+  cairo_set_source_rgb (cr, 0.75, 0.75, 0.75);
+  for (x = goff & -CHECK_SIZE; x < goff + width; x += CHECK_SIZE)
+    for (y = 0; y < height; y += CHECK_SIZE)
+      if ((x / CHECK_SIZE + y / CHECK_SIZE) % 2 == 0)
+	cairo_rectangle (cr, x - goff, y, CHECK_SIZE, CHECK_SIZE);
+  cairo_fill (cr);
 
   if (which == 0)
     {
@@ -834,8 +772,7 @@ color_sample_draw_sample (Gcolor3ColorSelection *colorsel,
                              priv->old_color[COLORSEL_RED],
                              priv->old_color[COLORSEL_GREEN],
                              priv->old_color[COLORSEL_BLUE],
-                             priv->has_opacity ?
-                                priv->old_color[COLORSEL_OPACITY] : 1.0);
+			     priv->old_color[COLORSEL_OPACITY]);
     }
   else
     {
@@ -843,8 +780,7 @@ color_sample_draw_sample (Gcolor3ColorSelection *colorsel,
                              priv->color[COLORSEL_RED],
                              priv->color[COLORSEL_GREEN],
                              priv->color[COLORSEL_BLUE],
-                             priv->has_opacity ?
-                               priv->color[COLORSEL_OPACITY] : 1.0);
+			     priv->color[COLORSEL_OPACITY]);
     }
 
   cairo_rectangle (cr, 0, 0, width, height);
@@ -1547,7 +1483,6 @@ gcolor3_color_selection_new (void)
   colorsel = g_object_new (GCOLOR3_TYPE_COLOR_SELECTION, NULL);
   priv = colorsel->private_data;
   set_color_internal (colorsel, color);
-  gcolor3_color_selection_set_has_opacity_control (colorsel, TRUE);
 
   /* We want to make sure that default_set is FALSE.
    * This way the user can still set it.
@@ -1556,66 +1491,6 @@ gcolor3_color_selection_new (void)
   priv->default_alpha_set = FALSE;
 
   return GTK_WIDGET (colorsel);
-}
-
-/**
- * gcolor3_color_selection_get_has_opacity_control:
- * @colorsel: a #Gcolor3ColorSelection
- *
- * Determines whether the colorsel has an opacity control.
- *
- * Returns: %TRUE if the @colorsel has an opacity control,
- *     %FALSE if it does't
- */
-gboolean
-gcolor3_color_selection_get_has_opacity_control (Gcolor3ColorSelection *colorsel)
-{
-  Gcolor3ColorSelectionPrivate *priv;
-
-  g_return_val_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel), FALSE);
-
-  priv = colorsel->private_data;
-
-  return priv->has_opacity;
-}
-
-/**
- * gcolor3_color_selection_set_has_opacity_control:
- * @colorsel: a #Gcolor3ColorSelection
- * @has_opacity: %TRUE if @colorsel can set the opacity, %FALSE otherwise
- *
- * Sets the @colorsel to use or not use opacity.
- */
-void
-gcolor3_color_selection_set_has_opacity_control (Gcolor3ColorSelection *colorsel,
-                                                 gboolean           has_opacity)
-{
-  Gcolor3ColorSelectionPrivate *priv;
-
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
-
-  priv = colorsel->private_data;
-  has_opacity = has_opacity != FALSE;
-
-  if (priv->has_opacity != has_opacity)
-    {
-      priv->has_opacity = has_opacity;
-      if (has_opacity)
-        {
-          gtk_widget_show (priv->opacity_slider);
-          gtk_widget_show (priv->opacity_label);
-          gtk_widget_show (priv->opacity_entry);
-        }
-      else
-        {
-          gtk_widget_hide (priv->opacity_slider);
-          gtk_widget_hide (priv->opacity_label);
-          gtk_widget_hide (priv->opacity_entry);
-        }
-      color_sample_update_samples (colorsel);
-
-      g_object_notify (G_OBJECT (colorsel), "has-opacity-control");
-    }
 }
 
 /**
@@ -1728,7 +1603,7 @@ gcolor3_color_selection_get_current_alpha (Gcolor3ColorSelection *colorsel)
   g_return_val_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel), 0);
 
   priv = colorsel->private_data;
-  return priv->has_opacity ? UNSCALE (priv->color[COLORSEL_OPACITY]) : 65535;
+  return UNSCALE (priv->color[COLORSEL_OPACITY]);
 }
 
 /**
@@ -1833,7 +1708,7 @@ gcolor3_color_selection_get_previous_alpha (Gcolor3ColorSelection *colorsel)
   g_return_val_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel), 0);
 
   priv = colorsel->private_data;
-  return priv->has_opacity ? UNSCALE (priv->old_color[COLORSEL_OPACITY]) : 65535;
+  return UNSCALE (priv->old_color[COLORSEL_OPACITY]);
 }
 
 /**
@@ -1905,7 +1780,7 @@ gcolor3_color_selection_get_current_rgba (Gcolor3ColorSelection *colorsel,
   rgba->red = priv->color[COLORSEL_RED];
   rgba->green = priv->color[COLORSEL_GREEN];
   rgba->blue = priv->color[COLORSEL_BLUE];
-  rgba->alpha = (priv->has_opacity) ? priv->color[COLORSEL_OPACITY] : 1;
+  rgba->alpha = priv->color[COLORSEL_OPACITY];
 }
 
 /**
@@ -1973,7 +1848,7 @@ gcolor3_color_selection_get_previous_rgba (Gcolor3ColorSelection *colorsel,
   rgba->red = priv->old_color[COLORSEL_RED];
   rgba->green = priv->old_color[COLORSEL_GREEN];
   rgba->blue = priv->old_color[COLORSEL_BLUE];
-  rgba->alpha = (priv->has_opacity) ? priv->old_color[COLORSEL_OPACITY] : 1;
+  rgba->alpha = priv->old_color[COLORSEL_OPACITY];
 }
 
 /**
