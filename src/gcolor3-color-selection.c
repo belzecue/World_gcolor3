@@ -77,7 +77,7 @@
  * scale_round() in utils.c for more general conversions
  */
 #define SCALE(i) (i / 65535.)
-#define UNSCALE(d) ((guint16)(d * 65535 + 0.5))
+#define UNSCALE(d) ((guint16)(d * G_MAXUINT16 + 0.5))
 
 enum {
   COLOR_CHANGED,
@@ -613,10 +613,10 @@ color_sample_drop_handle (GtkWidget             *widget,
 
   if (widget == priv->cur_sample)
     {
-      color.red = (gdouble)vals[0] / 0xffff;
-      color.green = (gdouble)vals[1] / 0xffff;
-      color.blue = (gdouble)vals[2] / 0xffff;
-      color.alpha = (gdouble)vals[3] / 0xffff;
+      color.red = SCALE (vals[0]);
+      color.green = SCALE (vals[1]);
+      color.blue = SCALE (vals[2]);
+      color.alpha = SCALE (vals[3]);
 
       set_color_internal (colorsel, &color);
     }
@@ -641,10 +641,10 @@ color_sample_drag_handle (GtkWidget             *widget,
   else
     colsrc = priv->color;
 
-  vals[0] = colsrc[COLORSEL_RED] * 0xffff;
-  vals[1] = colsrc[COLORSEL_GREEN] * 0xffff;
-  vals[2] = colsrc[COLORSEL_BLUE] * 0xffff;
-  vals[3] = colsrc[COLORSEL_OPACITY] * 0xffff;
+  vals[0] = UNSCALE (colsrc[COLORSEL_RED]);
+  vals[1] = UNSCALE (colsrc[COLORSEL_GREEN]);
+  vals[2] = UNSCALE (colsrc[COLORSEL_BLUE]);
+  vals[3] = UNSCALE (colsrc[COLORSEL_OPACITY]);
 
   gtk_selection_data_set (selection_data,
                           gdk_atom_intern_static_string ("application/x-color"),
