@@ -110,7 +110,7 @@ struct _Gcolor3ColorSelectionPrivate
   guint default_set       : 1;
   guint has_grab          : 1;
 
-  // FIXME: these can be replaced with a GdkRGBA
+  // RGB and HSV values in the 0.0 and 1.0 range, inclusive.
   gdouble color[COLORSEL_NUM_CHANNELS];
   gdouble old_color[COLORSEL_NUM_CHANNELS];
 
@@ -501,17 +501,17 @@ static void color_sample_update_samples (Gcolor3ColorSelection *colorsel);
 
 static void
 set_color_internal (Gcolor3ColorSelection *colorsel,
-                    gdouble               *color)
+                    GdkRGBA               *color)
 {
   Gcolor3ColorSelectionPrivate *priv;
   gint i;
 
   priv = gcolor3_color_selection_get_instance_private (colorsel);
   priv->changing = TRUE;
-  priv->color[COLORSEL_RED] = color[0];
-  priv->color[COLORSEL_GREEN] = color[1];
-  priv->color[COLORSEL_BLUE] = color[2];
-  priv->color[COLORSEL_OPACITY] = color[3];
+  priv->color[COLORSEL_RED] = color->red;
+  priv->color[COLORSEL_GREEN] = color->green;
+  priv->color[COLORSEL_BLUE] = color->blue;
+  priv->color[COLORSEL_OPACITY] = color->alpha;
   gtk_rgb_to_hsv (priv->color[COLORSEL_RED],
                   priv->color[COLORSEL_GREEN],
                   priv->color[COLORSEL_BLUE],
@@ -585,9 +585,9 @@ color_sample_drop_handle (GtkWidget             *widget,
 {
   Gcolor3ColorSelection *colorsel = GCOLOR3_COLOR_SELECTION (data);
   Gcolor3ColorSelectionPrivate *priv;
+  GdkRGBA color;
   gint length;
   guint16 *vals;
-  gdouble color[4];
 
   priv = gcolor3_color_selection_get_instance_private (colorsel);
 
@@ -616,12 +616,12 @@ color_sample_drop_handle (GtkWidget             *widget,
 
   if (widget == priv->cur_sample)
     {
-      color[0] = (gdouble)vals[0] / 0xffff;
-      color[1] = (gdouble)vals[1] / 0xffff;
-      color[2] = (gdouble)vals[2] / 0xffff;
-      color[3] = (gdouble)vals[3] / 0xffff;
+      color.red = (gdouble)vals[0] / 0xffff;
+      color.green = (gdouble)vals[1] / 0xffff;
+      color.blue = (gdouble)vals[2] / 0xffff;
+      color.alpha = (gdouble)vals[3] / 0xffff;
 
-      set_color_internal (colorsel, color);
+      set_color_internal (colorsel, &color);
     }
 }
 
@@ -1326,18 +1326,16 @@ gcolor3_color_selection_new (void)
 {
   Gcolor3ColorSelection *colorsel;
   Gcolor3ColorSelectionPrivate *priv;
-  gdouble color[4];
-  color[0] = 1.0;
-  color[1] = 1.0;
-  color[2] = 1.0;
-  color[3] = 1.0;
+  GdkRGBA color = { 1, 1, 1, 1 };
 
   colorsel = g_object_new (GCOLOR3_TYPE_COLOR_SELECTION, NULL);
   priv = gcolor3_color_selection_get_instance_private (colorsel);
-  set_color_internal (colorsel, color);
+  set_color_internal (colorsel, &color);
 
   /* We want to make sure that default_set is FALSE.
    * This way the user can still set it.
+   * It gets initialized to FALSE, but `set_color_internal`
+   * sets it to TRUE.
    */
   priv->default_set = FALSE;
 
@@ -1369,10 +1367,10 @@ gcolor3_color_selection_set_current_rgba (Gcolor3ColorSelection *colorsel,
   priv = gcolor3_color_selection_get_instance_private (colorsel);
   priv->changing = TRUE;
 
-  priv->color[COLORSEL_RED] = CLAMP (rgba->red, 0, 1);
-  priv->color[COLORSEL_GREEN] = CLAMP (rgba->green, 0, 1);
-  priv->color[COLORSEL_BLUE] = CLAMP (rgba->blue, 0, 1);
-  priv->color[COLORSEL_OPACITY] = CLAMP (rgba->alpha, 0, 1);
+  priv->color[COLORSEL_RED] = rgba->red;
+  priv->color[COLORSEL_GREEN] = rgba->green;
+  priv->color[COLORSEL_BLUE] = rgba->blue;
+  priv->color[COLORSEL_OPACITY] = rgba->alpha;
 
   gtk_rgb_to_hsv (priv->color[COLORSEL_RED],
                   priv->color[COLORSEL_GREEN],
@@ -1442,10 +1440,10 @@ gcolor3_color_selection_set_previous_rgba (Gcolor3ColorSelection *colorsel,
   priv = gcolor3_color_selection_get_instance_private (colorsel);
   priv->changing = TRUE;
 
-  priv->old_color[COLORSEL_RED] = CLAMP (rgba->red, 0, 1);
-  priv->old_color[COLORSEL_GREEN] = CLAMP (rgba->green, 0, 1);
-  priv->old_color[COLORSEL_BLUE] = CLAMP (rgba->blue, 0, 1);
-  priv->old_color[COLORSEL_OPACITY] = CLAMP (rgba->alpha, 0, 1);
+  priv->old_color[COLORSEL_RED] = rgba->red;
+  priv->old_color[COLORSEL_GREEN] = rgba->green;
+  priv->old_color[COLORSEL_BLUE] = rgba->blue;
+  priv->old_color[COLORSEL_OPACITY] = rgba->alpha;
 
   gtk_rgb_to_hsv (priv->old_color[COLORSEL_RED],
                   priv->old_color[COLORSEL_GREEN],
