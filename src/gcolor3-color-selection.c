@@ -160,8 +160,6 @@ static void gcolor3_color_selection_get_property    (GObject                 *ob
 static gboolean gcolor3_color_selection_grab_broken (GtkWidget               *widget,
                                                      GdkEventGrabBroken      *event);
 
-static void     make_control_relations                      (AtkObject             *atk_obj,
-                                                             GtkWidget             *widget);
 static void     make_all_relations                          (AtkObject             *atk_obj,
                                                              Gcolor3ColorSelectionPrivate *priv);
 
