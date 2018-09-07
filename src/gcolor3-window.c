@@ -190,7 +190,7 @@ gcolor3_window_picker_changed (Gcolor3ColorSelection *picker, gpointer user_data
 
 	priv = gcolor3_window_get_instance_private (GCOLOR3_WINDOW (user_data));
 
-	gcolor3_color_selection_get_current_color (GCOLOR3_COLOR_SELECTION (picker), &priv->current);
+	gcolor3_color_selection_get_current_rgba (GCOLOR3_COLOR_SELECTION (picker), &priv->current);
 }
 
 static void
@@ -237,9 +237,9 @@ gcolor3_window_selection_changed (GtkListBox *listbox, gpointer user_data)
 	g_free (color);
 
 	/* Save the old color in the picker. */
-	gcolor3_color_selection_get_current_color (GCOLOR3_COLOR_SELECTION (priv->picker), &current);
-	gcolor3_color_selection_set_previous_color (GCOLOR3_COLOR_SELECTION (priv->picker), &current);
-	gcolor3_color_selection_set_current_color (GCOLOR3_COLOR_SELECTION (priv->picker), &new);
+	gcolor3_color_selection_get_current_rgba (GCOLOR3_COLOR_SELECTION (priv->picker), &current);
+	gcolor3_color_selection_set_previous_rgba (GCOLOR3_COLOR_SELECTION (priv->picker), &current);
+	gcolor3_color_selection_set_current_rgba (GCOLOR3_COLOR_SELECTION (priv->picker), &new);
 }
 
 static GtkWidget *

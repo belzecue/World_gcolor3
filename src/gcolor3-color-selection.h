@@ -63,35 +63,19 @@ struct _Gcolor3ColorSelectionClass
 
 /* ColorSelection */
 
-GType      gcolor3_color_selection_get_type                (void) G_GNUC_CONST;
-GtkWidget *gcolor3_color_selection_new                     (void);
+GType      gcolor3_color_selection_get_type          (void) G_GNUC_CONST;
+GtkWidget *gcolor3_color_selection_new               (void);
 
-void     gcolor3_color_selection_set_current_alpha   (Gcolor3ColorSelection *colorsel,
-						      guint16                alpha);
-guint16  gcolor3_color_selection_get_current_alpha   (Gcolor3ColorSelection *colorsel);
-void     gcolor3_color_selection_set_previous_alpha  (Gcolor3ColorSelection *colorsel,
-						      guint16                alpha);
-guint16  gcolor3_color_selection_get_previous_alpha  (Gcolor3ColorSelection *colorsel);
-
-void     gcolor3_color_selection_set_current_rgba    (Gcolor3ColorSelection *colorsel,
+void       gcolor3_color_selection_set_current_rgba  (Gcolor3ColorSelection *colorsel,
                                                       const GdkRGBA         *rgba);
-void     gcolor3_color_selection_get_current_rgba    (Gcolor3ColorSelection *colorsel,
+void       gcolor3_color_selection_get_current_rgba  (Gcolor3ColorSelection *colorsel,
                                                       GdkRGBA               *rgba);
-void     gcolor3_color_selection_set_previous_rgba   (Gcolor3ColorSelection *colorsel,
+void       gcolor3_color_selection_set_previous_rgba (Gcolor3ColorSelection *colorsel,
                                                       const GdkRGBA         *rgba);
-void     gcolor3_color_selection_get_previous_rgba   (Gcolor3ColorSelection *colorsel,
+void       gcolor3_color_selection_get_previous_rgba (Gcolor3ColorSelection *colorsel,
                                                       GdkRGBA               *rgba);
 
-gboolean gcolor3_color_selection_is_adjusting        (Gcolor3ColorSelection *colorsel);
-
-void     gcolor3_color_selection_set_current_color   (Gcolor3ColorSelection *colorsel,
-                                                      const GdkRGBA         *color);
-void     gcolor3_color_selection_get_current_color   (Gcolor3ColorSelection *colorsel,
-                                                      GdkRGBA               *color);
-void     gcolor3_color_selection_set_previous_color  (Gcolor3ColorSelection *colorsel,
-                                                      const GdkRGBA         *color);
-void     gcolor3_color_selection_get_previous_color  (Gcolor3ColorSelection *colorsel,
-                                                      GdkRGBA               *color);
+gboolean   gcolor3_color_selection_is_adjusting      (Gcolor3ColorSelection *colorsel);
 
 G_END_DECLS
 

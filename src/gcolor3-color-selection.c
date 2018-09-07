@@ -89,7 +89,6 @@ enum {
 
 enum {
   PROP_0,
-  PROP_CURRENT_ALPHA,
   PROP_CURRENT_RGBA
 };
 
@@ -109,7 +108,6 @@ struct _Gcolor3ColorSelectionPrivate
 {
   guint changing          : 1;
   guint default_set       : 1;
-  guint default_alpha_set : 1;
   guint has_grab          : 1;
 
   // FIXME: these can be replaced with a GdkRGBA
@@ -255,17 +253,6 @@ gcolor3_color_selection_class_init (Gcolor3ColorSelectionClass *gcolor3_color_se
   widget_class->destroy = gcolor3_color_selection_destroy;
   widget_class->grab_broken_event = gcolor3_color_selection_grab_broken;
 
-  g_object_class_install_property (object_class,
-                                   PROP_CURRENT_ALPHA,
-                                   g_param_spec_uint ("current-alpha",
-                                                      P_("Current Alpha"),
-                                                      P_("The current opacity value (0 fully transparent, 65535 fully opaque)"),
-                                                      0, 65535, 65535,
-                                                      G_PARAM_READWRITE|
-                                                      G_PARAM_STATIC_NAME|
-                                                      G_PARAM_STATIC_NICK|
-                                                      G_PARAM_STATIC_BLURB));
-
   /**
    * Gcolor3ColorSelection:current-rgba:
    *
@@ -346,7 +333,6 @@ gcolor3_color_selection_init (Gcolor3ColorSelection *colorsel)
   priv = gcolor3_color_selection_get_instance_private (colorsel);
   priv->changing = FALSE;
   priv->default_set = FALSE;
-  priv->default_alpha_set = FALSE;
 
   priv->triangle_colorsel = gcolor3_hsv_new ();
   g_signal_connect (priv->triangle_colorsel, "changed", G_CALLBACK (hsv_changed), colorsel);
@@ -444,9 +430,6 @@ gcolor3_color_selection_set_property (GObject         *object,
 
   switch (prop_id)
     {
-    case PROP_CURRENT_ALPHA:
-      gcolor3_color_selection_set_current_alpha (colorsel, g_value_get_uint (value));
-      break;
     case PROP_CURRENT_RGBA:
       gcolor3_color_selection_set_current_rgba (colorsel, g_value_get_boxed (value));
       break;
@@ -467,9 +450,6 @@ gcolor3_color_selection_get_property (GObject     *object,
 
   switch (prop_id)
     {
-    case PROP_CURRENT_ALPHA:
-      g_value_set_uint (value, gcolor3_color_selection_get_current_alpha (colorsel));
-      break;
     case PROP_CURRENT_RGBA:
       {
         GdkRGBA rgba;
@@ -547,7 +527,6 @@ set_color_internal (Gcolor3ColorSelection *colorsel,
         priv->old_color[i] = priv->color[i];
     }
   priv->default_set = TRUE;
-  priv->default_alpha_set = TRUE;
   update_color (colorsel);
 }
 
@@ -1341,7 +1320,6 @@ update_color (Gcolor3ColorSelection *colorsel)
 
   g_object_freeze_notify (G_OBJECT (colorsel));
   g_object_notify (G_OBJECT (colorsel), "current-rgba");
-  g_object_notify (G_OBJECT (colorsel), "current-alpha");
   g_object_thaw_notify (G_OBJECT (colorsel));
 
   g_object_unref (colorsel);
@@ -1373,227 +1351,8 @@ gcolor3_color_selection_new (void)
    * This way the user can still set it.
    */
   priv->default_set = FALSE;
-  priv->default_alpha_set = FALSE;
 
   return GTK_WIDGET (colorsel);
-}
-
-/**
- * gcolor3_color_selection_set_current_color:
- * @colorsel: a #Gcolor3ColorSelection
- * @color: a #GdkRGBA to set the current color with
- *
- * Sets the current color to be @color.
- *
- * The first time this is called, it will also set
- * the original color to be @color too.
- */
-void
-gcolor3_color_selection_set_current_color (Gcolor3ColorSelection *colorsel,
-                                           const GdkRGBA         *color)
-{
-  Gcolor3ColorSelectionPrivate *priv;
-  gint i;
-
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
-  g_return_if_fail (color != NULL);
-
-  priv = gcolor3_color_selection_get_instance_private (colorsel);
-  priv->changing = TRUE;
-  priv->color[COLORSEL_RED] = color->red;
-  priv->color[COLORSEL_GREEN] = color->green;
-  priv->color[COLORSEL_BLUE] = color->blue;
-  gtk_rgb_to_hsv (priv->color[COLORSEL_RED],
-                  priv->color[COLORSEL_GREEN],
-                  priv->color[COLORSEL_BLUE],
-                  &priv->color[COLORSEL_HUE],
-                  &priv->color[COLORSEL_SATURATION],
-                  &priv->color[COLORSEL_VALUE]);
-  if (priv->default_set == FALSE)
-    {
-      for (i = 0; i < COLORSEL_NUM_CHANNELS; i++)
-        priv->old_color[i] = priv->color[i];
-    }
-  priv->default_set = TRUE;
-  update_color (colorsel);
-}
-
-/**
- * gcolor3_color_selection_set_current_alpha:
- * @colorsel: a #Gcolor3ColorSelection
- * @alpha: an integer between 0 and 65535
- *
- * Sets the current opacity to be @alpha.
- *
- * The first time this is called, it will also set
- * the original opacity to be @alpha too.
- */
-// FIXME: this can possibly be removed, together with all special alpha treatment.
-void
-gcolor3_color_selection_set_current_alpha (Gcolor3ColorSelection *colorsel,
-                                           guint16                alpha)
-{
-  Gcolor3ColorSelectionPrivate *priv;
-  gint i;
-
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
-
-  priv = gcolor3_color_selection_get_instance_private (colorsel);
-  priv->changing = TRUE;
-  priv->color[COLORSEL_OPACITY] = SCALE (alpha);
-  if (priv->default_alpha_set == FALSE)
-    {
-      for (i = 0; i < COLORSEL_NUM_CHANNELS; i++)
-        priv->old_color[i] = priv->color[i];
-    }
-  priv->default_alpha_set = TRUE;
-  update_color (colorsel);
-}
-
-/**
- * gcolor3_color_selection_get_current_color:
- * @colorsel: a #Gcolor3ColorSelection
- * @color: (out): a #GdkRGBA to fill in with the current color
- *
- * Sets @color to be the current color in the Gcolor3ColorSelection widget.
- */
-void
-gcolor3_color_selection_get_current_color (Gcolor3ColorSelection *colorsel,
-                                           GdkRGBA               *color)
-{
-  Gcolor3ColorSelectionPrivate *priv;
-
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
-  g_return_if_fail (color != NULL);
-
-  priv = gcolor3_color_selection_get_instance_private (colorsel);
-  color->red = priv->color[COLORSEL_RED];
-  color->green = priv->color[COLORSEL_GREEN];
-  color->blue = priv->color[COLORSEL_BLUE];
-}
-
-/**
- * gcolor3_color_selection_get_current_alpha:
- * @colorsel: a #Gcolor3ColorSelection
- *
- * Returns the current alpha value.
- *
- * Returns: an integer between 0 and 65535
- */
-guint16
-gcolor3_color_selection_get_current_alpha (Gcolor3ColorSelection *colorsel)
-{
-  Gcolor3ColorSelectionPrivate *priv;
-
-  g_return_val_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel), 0);
-
-  priv = gcolor3_color_selection_get_instance_private (colorsel);
-  return UNSCALE (priv->color[COLORSEL_OPACITY]);
-}
-
-/**
- * gcolor3_color_selection_set_previous_color:
- * @colorsel: a #Gcolor3ColorSelection
- * @color: a #GdkRGBA to set the previous color with
- *
- * Sets the “previous” color to be @color.
- *
- * This function should be called with some hesitations,
- * as it might seem confusing to have that color change.
- * Calling gcolor3_color_selection_set_current_color() will also
- * set this color the first time it is called.
- */
-void
-gcolor3_color_selection_set_previous_color (Gcolor3ColorSelection *colorsel,
-                                            const GdkRGBA         *color)
-{
-  Gcolor3ColorSelectionPrivate *priv;
-
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
-  g_return_if_fail (color != NULL);
-
-  priv = gcolor3_color_selection_get_instance_private (colorsel);
-  priv->changing = TRUE;
-  priv->old_color[COLORSEL_RED] = color->red;
-  priv->old_color[COLORSEL_GREEN] = color->green;
-  priv->old_color[COLORSEL_BLUE] = color->blue;
-  gtk_rgb_to_hsv (priv->old_color[COLORSEL_RED],
-                  priv->old_color[COLORSEL_GREEN],
-                  priv->old_color[COLORSEL_BLUE],
-                  &priv->old_color[COLORSEL_HUE],
-                  &priv->old_color[COLORSEL_SATURATION],
-                  &priv->old_color[COLORSEL_VALUE]);
-  color_sample_update_samples (colorsel);
-  priv->default_set = TRUE;
-  priv->changing = FALSE;
-}
-
-/**
- * gcolor3_color_selection_set_previous_alpha:
- * @colorsel: a #Gcolor3ColorSelection
- * @alpha: an integer between 0 and 65535
- *
- * Sets the “previous” alpha to be @alpha.
- *
- * This function should be called with some hesitations,
- * as it might seem confusing to have that alpha change.
- */
-void
-gcolor3_color_selection_set_previous_alpha (Gcolor3ColorSelection *colorsel,
-                                            guint16                alpha)
-{
-  Gcolor3ColorSelectionPrivate *priv;
-
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
-
-  priv = gcolor3_color_selection_get_instance_private (colorsel);
-  priv->changing = TRUE;
-  priv->old_color[COLORSEL_OPACITY] = SCALE (alpha);
-  color_sample_update_samples (colorsel);
-  priv->default_alpha_set = TRUE;
-  priv->changing = FALSE;
-}
-
-
-/**
- * gcolor3_color_selection_get_previous_color:
- * @colorsel: a #Gcolor3ColorSelection
- * @color: (out): a #GdkRGBA to fill in with the original color value
- *
- * Fills @color in with the original color value.
- */
-void
-gcolor3_color_selection_get_previous_color (Gcolor3ColorSelection *colorsel,
-                                            GdkRGBA               *color)
-{
-  Gcolor3ColorSelectionPrivate *priv;
-
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
-  g_return_if_fail (color != NULL);
-
-  priv = gcolor3_color_selection_get_instance_private (colorsel);
-  color->red = priv->old_color[COLORSEL_RED];
-  color->green = priv->old_color[COLORSEL_GREEN];
-  color->blue = priv->old_color[COLORSEL_BLUE];
-}
-
-/**
- * gcolor3_color_selection_get_previous_alpha:
- * @colorsel: a #Gcolor3ColorSelection
- *
- * Returns the previous alpha value.
- *
- * Returns: an integer between 0 and 65535
- */
-guint16
-gcolor3_color_selection_get_previous_alpha (Gcolor3ColorSelection *colorsel)
-{
-  Gcolor3ColorSelectionPrivate *priv;
-
-  g_return_val_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel), 0);
-
-  priv = gcolor3_color_selection_get_instance_private (colorsel);
-  return UNSCALE (priv->old_color[COLORSEL_OPACITY]);
 }
 
 /**
