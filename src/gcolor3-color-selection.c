@@ -343,7 +343,7 @@ gcolor3_color_selection_init (Gcolor3ColorSelection *colorsel)
 
   gtk_widget_init_template (GTK_WIDGET (colorsel));
 
-  priv = colorsel->private_data = gcolor3_color_selection_get_instance_private (colorsel);
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
   priv->changing = FALSE;
   priv->default_set = FALSE;
   priv->default_alpha_set = FALSE;
@@ -489,8 +489,9 @@ gcolor3_color_selection_get_property (GObject     *object,
 static void
 gcolor3_color_selection_destroy (GtkWidget *widget)
 {
-  Gcolor3ColorSelection *cselection = GCOLOR3_COLOR_SELECTION (widget);
-  Gcolor3ColorSelectionPrivate *priv = cselection->private_data;
+  Gcolor3ColorSelectionPrivate *priv;
+
+  priv = gcolor3_color_selection_get_instance_private (GCOLOR3_COLOR_SELECTION (widget));
 
   if (priv->dropper_grab_widget)
     {
@@ -528,7 +529,7 @@ set_color_internal (Gcolor3ColorSelection *colorsel,
   Gcolor3ColorSelectionPrivate *priv;
   gint i;
 
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
   priv->changing = TRUE;
   priv->color[COLORSEL_RED] = color[0];
   priv->color[COLORSEL_GREEN] = color[1];
@@ -575,11 +576,10 @@ color_sample_drag_begin (GtkWidget      *widget,
                          GdkDragContext *context,
                          gpointer        data)
 {
-  Gcolor3ColorSelection *colorsel = data;
   Gcolor3ColorSelectionPrivate *priv;
   gdouble *colsrc;
 
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (GCOLOR3_COLOR_SELECTION (data));
 
   if (widget == priv->old_sample)
     colsrc = priv->old_color;
@@ -607,12 +607,13 @@ color_sample_drop_handle (GtkWidget             *widget,
                           UNUSED guint           time,
                           gpointer               data)
 {
-  Gcolor3ColorSelection *colorsel = data;
+  Gcolor3ColorSelection *colorsel = GCOLOR3_COLOR_SELECTION (data);
   Gcolor3ColorSelectionPrivate *priv;
   gint length;
   guint16 *vals;
   gdouble color[4];
-  priv = colorsel->private_data;
+
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
 
   /* This is currently a guint16 array of the format:
    * R
@@ -656,12 +657,11 @@ color_sample_drag_handle (GtkWidget             *widget,
                           UNUSED guint           time,
                           gpointer               data)
 {
-  Gcolor3ColorSelection *colorsel = data;
   Gcolor3ColorSelectionPrivate *priv;
   guint16 vals[4];
   gdouble *colsrc;
 
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (GCOLOR3_COLOR_SELECTION (data));
 
   if (widget == priv->old_sample)
     colsrc = priv->old_color;
@@ -690,7 +690,7 @@ color_sample_draw_sample (Gcolor3ColorSelection *colorsel,
   int width, height;
 
   g_return_if_fail (colorsel != NULL);
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
 
   g_return_if_fail (priv->sample_area != NULL);
   if (!gtk_widget_is_drawable (priv->sample_area))
@@ -751,7 +751,9 @@ color_sample_draw_sample (Gcolor3ColorSelection *colorsel,
 static void
 color_sample_update_samples (Gcolor3ColorSelection *colorsel)
 {
-  Gcolor3ColorSelectionPrivate *priv = colorsel->private_data;
+  Gcolor3ColorSelectionPrivate *priv;
+
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
   gtk_widget_queue_draw (priv->old_sample);
   gtk_widget_queue_draw (priv->cur_sample);
 }
@@ -782,7 +784,8 @@ color_sample_setup_dnd (Gcolor3ColorSelection *colorsel, GtkWidget *sample)
     { "application/x-color", 0 }
   };
   Gcolor3ColorSelectionPrivate *priv;
-  priv = colorsel->private_data;
+
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
 
   gtk_drag_source_set (sample,
                        GDK_BUTTON1_MASK | GDK_BUTTON3_MASK,
@@ -853,14 +856,15 @@ grab_color_at_pointer (GdkScreen *screen,
                        gint       y_root,
                        gpointer   data)
 {
+  Gcolor3ColorSelection *colorsel = GCOLOR3_COLOR_SELECTION (data);
+  Gcolor3ColorSelectionPrivate *priv;
   GdkPixbuf *pixbuf;
   guchar *pixels;
-  Gcolor3ColorSelection *colorsel = data;
-  Gcolor3ColorSelectionPrivate *priv;
-  GdkWindow *root_window = gdk_screen_get_root_window (screen);
+  GdkWindow *root_window;
 
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
 
+  root_window = gdk_screen_get_root_window (screen);
   pixbuf = gdk_pixbuf_get_from_window (root_window,
                                        x_root, y_root,
                                        1, 1);
@@ -895,11 +899,9 @@ grab_color_at_pointer (GdkScreen *screen,
 static void
 shutdown_eyedropper (GtkWidget *widget)
 {
-  Gcolor3ColorSelection *colorsel;
   Gcolor3ColorSelectionPrivate *priv;
 
-  colorsel = GCOLOR3_COLOR_SELECTION (widget);
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (GCOLOR3_COLOR_SELECTION (widget));
 
   if (priv->has_grab)
     {
@@ -1049,17 +1051,20 @@ static void
 get_screen_color (GtkWidget *button, gpointer user_data)
 {
   Gcolor3ColorSelection *colorsel = GCOLOR3_COLOR_SELECTION (user_data);
-  Gcolor3ColorSelectionPrivate *priv = colorsel->private_data;
-  GdkScreen *screen = gtk_widget_get_screen (GTK_WIDGET (button));
+  Gcolor3ColorSelectionPrivate *priv;
+  GdkScreen *screen;
   GdkDevice *device, *keyb_device, *pointer_device;
   GdkCursor *picker_cursor;
   GdkGrabStatus grab_status;
   GdkWindow *window;
   GtkWidget *grab_widget, *toplevel;
 
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
+
   guint32 time = gtk_get_current_event_time ();
 
   device = gtk_get_current_event_device ();
+  screen = gtk_widget_get_screen (GTK_WIDGET (button));
 
   if (gdk_device_get_source (device) == GDK_SOURCE_KEYBOARD)
     {
@@ -1139,13 +1144,12 @@ static void
 hex_changed (UNUSED GtkWidget *hex_entry,
              gpointer          data)
 {
-  Gcolor3ColorSelection *colorsel;
+  Gcolor3ColorSelection *colorsel = GCOLOR3_COLOR_SELECTION (data);
   Gcolor3ColorSelectionPrivate *priv;
   GdkRGBA color;
   gchar *text;
 
-  colorsel = GCOLOR3_COLOR_SELECTION (data);
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
 
   if (priv->changing)
     return;
@@ -1181,11 +1185,10 @@ static void
 hsv_changed (GtkWidget *hsv,
              gpointer   data)
 {
-  Gcolor3ColorSelection *colorsel;
+  Gcolor3ColorSelection *colorsel = GCOLOR3_COLOR_SELECTION (data);
   Gcolor3ColorSelectionPrivate *priv;
 
-  colorsel = GCOLOR3_COLOR_SELECTION (data);
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
 
   if (priv->changing)
     return;
@@ -1211,7 +1214,7 @@ adjustment_changed (GtkAdjustment *adjustment,
   Gcolor3ColorSelectionPrivate *priv;
 
   colorsel = GCOLOR3_COLOR_SELECTION (g_object_get_data (G_OBJECT (adjustment), "COLORSEL"));
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
 
   if (priv->changing)
     return;
@@ -1260,13 +1263,12 @@ static void
 opacity_entry_changed (UNUSED GtkWidget *opacity_entry,
                        gpointer          data)
 {
-  Gcolor3ColorSelection *colorsel;
+  Gcolor3ColorSelection *colorsel = GCOLOR3_COLOR_SELECTION (data);
   Gcolor3ColorSelectionPrivate *priv;
   GtkAdjustment *adj;
   gchar *text;
 
-  colorsel = GCOLOR3_COLOR_SELECTION (data);
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
 
   if (priv->changing)
     return;
@@ -1283,10 +1285,12 @@ opacity_entry_changed (UNUSED GtkWidget *opacity_entry,
 static void
 update_color (Gcolor3ColorSelection *colorsel)
 {
-  Gcolor3ColorSelectionPrivate *priv = colorsel->private_data;
+  Gcolor3ColorSelectionPrivate *priv;
   gchar entryval[12];
   gchar opacity_text[32];
   gchar *ptr;
+
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
 
   priv->changing = TRUE;
   color_sample_update_samples (colorsel);
@@ -1362,7 +1366,7 @@ gcolor3_color_selection_new (void)
   color[3] = 1.0;
 
   colorsel = g_object_new (GCOLOR3_TYPE_COLOR_SELECTION, NULL);
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
   set_color_internal (colorsel, color);
 
   /* We want to make sure that default_set is FALSE.
@@ -1394,7 +1398,7 @@ gcolor3_color_selection_set_current_color (Gcolor3ColorSelection *colorsel,
   g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
   g_return_if_fail (color != NULL);
 
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
   priv->changing = TRUE;
   priv->color[COLORSEL_RED] = color->red;
   priv->color[COLORSEL_GREEN] = color->green;
@@ -1434,7 +1438,7 @@ gcolor3_color_selection_set_current_alpha (Gcolor3ColorSelection *colorsel,
 
   g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
 
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
   priv->changing = TRUE;
   priv->color[COLORSEL_OPACITY] = SCALE (alpha);
   if (priv->default_alpha_set == FALSE)
@@ -1462,7 +1466,7 @@ gcolor3_color_selection_get_current_color (Gcolor3ColorSelection *colorsel,
   g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
   g_return_if_fail (color != NULL);
 
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
   color->red = priv->color[COLORSEL_RED];
   color->green = priv->color[COLORSEL_GREEN];
   color->blue = priv->color[COLORSEL_BLUE];
@@ -1483,7 +1487,7 @@ gcolor3_color_selection_get_current_alpha (Gcolor3ColorSelection *colorsel)
 
   g_return_val_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel), 0);
 
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
   return UNSCALE (priv->color[COLORSEL_OPACITY]);
 }
 
@@ -1508,7 +1512,7 @@ gcolor3_color_selection_set_previous_color (Gcolor3ColorSelection *colorsel,
   g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
   g_return_if_fail (color != NULL);
 
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
   priv->changing = TRUE;
   priv->old_color[COLORSEL_RED] = color->red;
   priv->old_color[COLORSEL_GREEN] = color->green;
@@ -1542,7 +1546,7 @@ gcolor3_color_selection_set_previous_alpha (Gcolor3ColorSelection *colorsel,
 
   g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
 
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
   priv->changing = TRUE;
   priv->old_color[COLORSEL_OPACITY] = SCALE (alpha);
   color_sample_update_samples (colorsel);
@@ -1567,7 +1571,7 @@ gcolor3_color_selection_get_previous_color (Gcolor3ColorSelection *colorsel,
   g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
   g_return_if_fail (color != NULL);
 
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
   color->red = priv->old_color[COLORSEL_RED];
   color->green = priv->old_color[COLORSEL_GREEN];
   color->blue = priv->old_color[COLORSEL_BLUE];
@@ -1588,7 +1592,7 @@ gcolor3_color_selection_get_previous_alpha (Gcolor3ColorSelection *colorsel)
 
   g_return_val_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel), 0);
 
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
   return UNSCALE (priv->old_color[COLORSEL_OPACITY]);
 }
 
@@ -1614,7 +1618,7 @@ gcolor3_color_selection_set_current_rgba (Gcolor3ColorSelection *colorsel,
   g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
   g_return_if_fail (rgba != NULL);
 
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
   priv->changing = TRUE;
 
   priv->color[COLORSEL_RED] = CLAMP (rgba->red, 0, 1);
@@ -1657,7 +1661,7 @@ gcolor3_color_selection_get_current_rgba (Gcolor3ColorSelection *colorsel,
   g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
   g_return_if_fail (rgba != NULL);
 
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
   rgba->red = priv->color[COLORSEL_RED];
   rgba->green = priv->color[COLORSEL_GREEN];
   rgba->blue = priv->color[COLORSEL_BLUE];
@@ -1687,7 +1691,7 @@ gcolor3_color_selection_set_previous_rgba (Gcolor3ColorSelection *colorsel,
   g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
   g_return_if_fail (rgba != NULL);
 
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
   priv->changing = TRUE;
 
   priv->old_color[COLORSEL_RED] = CLAMP (rgba->red, 0, 1);
@@ -1725,7 +1729,7 @@ gcolor3_color_selection_get_previous_rgba (Gcolor3ColorSelection *colorsel,
   g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
   g_return_if_fail (rgba != NULL);
 
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
   rgba->red = priv->old_color[COLORSEL_RED];
   rgba->green = priv->old_color[COLORSEL_GREEN];
   rgba->blue = priv->old_color[COLORSEL_BLUE];
@@ -1748,7 +1752,7 @@ gcolor3_color_selection_is_adjusting (Gcolor3ColorSelection *colorsel)
 
   g_return_val_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel), FALSE);
 
-  priv = colorsel->private_data;
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
 
   return (gcolor3_hsv_is_adjusting (GCOLOR3_HSV (priv->triangle_colorsel)));
 }

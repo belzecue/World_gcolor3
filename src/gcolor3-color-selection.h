@@ -46,9 +46,6 @@ typedef struct _Gcolor3ColorSelectionClass   Gcolor3ColorSelectionClass;
 struct _Gcolor3ColorSelection
 {
   GtkBox parent_instance;
-
-  /*< private >*/
-  Gcolor3ColorSelectionPrivate *private_data;
 };
 
 /**
