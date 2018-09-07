@@ -58,14 +58,6 @@ struct _Gcolor3ColorSelectionClass
   GtkBoxClass parent_class;
 
   void (*color_changed)	(Gcolor3ColorSelection *color_selection);
-
-  /*< private >*/
-
-  /* Padding for future expansion */
-  void (*_gcolor3_reserved1) (void);
-  void (*_gcolor3_reserved2) (void);
-  void (*_gcolor3_reserved3) (void);
-  void (*_gcolor3_reserved4) (void);
 };
 
 
