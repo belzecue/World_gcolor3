@@ -70,8 +70,6 @@
 #define DROPPER_X_HOT 2
 #define DROPPER_Y_HOT 16
 
-#define SAMPLE_WIDTH  64
-#define SAMPLE_HEIGHT 28
 #define CHECK_SIZE 16
 #define BIG_STEP 20
 
@@ -80,7 +78,6 @@
  */
 #define SCALE(i) (i / 65535.)
 #define UNSCALE(d) ((guint16)(d * 65535 + 0.5))
-#define INTENSITY(r, g, b) ((r) * 0.30 + (g) * 0.59 + (b) * 0.11)
 
 enum {
   COLOR_CHANGED,
