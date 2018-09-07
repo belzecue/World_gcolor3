@@ -497,9 +497,6 @@ gcolor3_color_selection_grab_broken (GtkWidget                 *widget,
  *
  */
 
-static void color_sample_draw_sample (Gcolor3ColorSelection *colorsel,
-                                      int                    which,
-                                      cairo_t *              cr);
 static void color_sample_update_samples (Gcolor3ColorSelection *colorsel);
 
 static void
@@ -657,16 +654,15 @@ color_sample_drag_handle (GtkWidget             *widget,
                           16, (guchar *)vals, 8);
 }
 
-/* which = 0 means draw old sample, which = 1 means draw new */
 static void
 color_sample_draw_sample (Gcolor3ColorSelection *colorsel,
-                          int                    which,
-                          cairo_t               *cr)
+			  GtkWidget             *sample,
+			  cairo_t               *cr,
+			  GdkRGBA               *color,
+			  gint                   goff)
 {
-  GtkWidget *da;
-  gint x, y, goff;
   Gcolor3ColorSelectionPrivate *priv;
-  int width, height;
+  gint x, y, width, height;
 
   g_return_if_fail (colorsel != NULL);
   priv = gcolor3_color_selection_get_instance_private (colorsel);
@@ -675,23 +671,9 @@ color_sample_draw_sample (Gcolor3ColorSelection *colorsel,
   if (!gtk_widget_is_drawable (priv->sample_area))
     return;
 
-  if (which == 0)
-    {
-      da = priv->old_sample;
-      goff = 0;
-    }
-  else
-    {
-      GtkAllocation old_sample_allocation;
-
-      da = priv->cur_sample;
-      gtk_widget_get_allocation (priv->old_sample, &old_sample_allocation);
-      goff =  old_sample_allocation.width % 32;
-    }
-
   /* Below needs tweaking for non-power-of-two */
-  width = gtk_widget_get_allocated_width (da);
-  height = gtk_widget_get_allocated_height (da);
+  width = gtk_widget_get_allocated_width (sample);
+  height = gtk_widget_get_allocated_height (sample);
 
   /* Draw checks in background */
   cairo_set_source_rgb (cr, 0.5, 0.5, 0.5);
@@ -705,23 +687,7 @@ color_sample_draw_sample (Gcolor3ColorSelection *colorsel,
 	cairo_rectangle (cr, x - goff, y, CHECK_SIZE, CHECK_SIZE);
   cairo_fill (cr);
 
-  if (which == 0)
-    {
-      cairo_set_source_rgba (cr,
-                             priv->old_color[COLORSEL_RED],
-                             priv->old_color[COLORSEL_GREEN],
-                             priv->old_color[COLORSEL_BLUE],
-			     priv->old_color[COLORSEL_OPACITY]);
-    }
-  else
-    {
-      cairo_set_source_rgba (cr,
-                             priv->color[COLORSEL_RED],
-                             priv->color[COLORSEL_GREEN],
-                             priv->color[COLORSEL_BLUE],
-			     priv->color[COLORSEL_OPACITY]);
-    }
-
+  cairo_set_source_rgba (cr, color->red, color->green, color->blue, color->alpha);
   cairo_rectangle (cr, 0, 0, width, height);
   cairo_fill (cr);
 }
@@ -742,7 +708,16 @@ color_old_sample_draw (UNUSED GtkWidget      *da,
                        cairo_t               *cr,
                        Gcolor3ColorSelection *colorsel)
 {
-  color_sample_draw_sample (colorsel, 0, cr);
+  Gcolor3ColorSelectionPrivate *priv;
+  GdkRGBA color;
+
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
+  color.red = priv->old_color[COLORSEL_RED];
+  color.green = priv->old_color[COLORSEL_GREEN];
+  color.blue = priv->old_color[COLORSEL_BLUE];
+  color.alpha = priv->old_color[COLORSEL_OPACITY];
+
+  color_sample_draw_sample (colorsel, priv->old_sample, cr, &color, 0);
   return FALSE;
 }
 
@@ -752,7 +727,21 @@ color_cur_sample_draw (UNUSED GtkWidget      *da,
                        cairo_t               *cr,
                        Gcolor3ColorSelection *colorsel)
 {
-  color_sample_draw_sample (colorsel, 1, cr);
+  Gcolor3ColorSelectionPrivate *priv;
+  GtkAllocation old_sample_allocation;
+  GdkRGBA color;
+  gint goff;
+
+  priv = gcolor3_color_selection_get_instance_private (colorsel);
+  color.red = priv->color[COLORSEL_RED];
+  color.green = priv->color[COLORSEL_GREEN];
+  color.blue = priv->color[COLORSEL_BLUE];
+  color.alpha = priv->color[COLORSEL_OPACITY];
+
+  gtk_widget_get_allocation (priv->old_sample, &old_sample_allocation);
+  goff = old_sample_allocation.width % 32;
+
+  color_sample_draw_sample (colorsel, priv->cur_sample, cr, &color, goff);
   return FALSE;
 }
 
