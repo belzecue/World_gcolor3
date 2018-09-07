@@ -35,8 +35,6 @@
 #include "gcolor3-hsv.h"
 #include "utils.h"
 
-#include <math.h>
-#include <string.h>
 #include <gdk/gdk.h>
 #ifdef GDK_WINDOWING_WAYLAND
 #include <gdk/gdkwayland.h>
