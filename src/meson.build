@@ -1,37 +1,40 @@
 headers = [
-  'gcolor3-application.h',
-  'gcolor3-color-item.h',
-  'gcolor3-color-row.h',
-  'gcolor3-color-selection.h',
-  'gcolor3-color-store.h',
-  'gcolor3-hsv.h',
-  'gcolor3-window.h',
+  'colpicker-application.h',
+  'colpicker-color-item.h',
+  'colpicker-color-row.h',
+  'colpicker-color-selection.h',
+  'colpicker-color-store.h',
+  'colpicker-hsv.h',
+  'colpicker-window.h',
   'utils.h'
 ]
 
 sources = [
-  'gcolor3-application.c',
-  'gcolor3-color-item.c',
-  'gcolor3-color-row.c',
-  'gcolor3-color-selection.c',
-  'gcolor3-color-store.c',
-  'gcolor3-hsv.c',
-  'gcolor3-window.c',
+  'colpicker-application.c',
+  'colpicker-color-item.c',
+  'colpicker-color-row.c',
+  'colpicker-color-selection.c',
+  'colpicker-color-store.c',
+  'colpicker-hsv.c',
+  'colpicker-window.c',
   'main.c',
   'utils.c'
 ]
 
 sources += gnome.compile_resources(
-  'gcolor3-resources', join_paths(meson.source_root(), 'data', 'gcolor3.gresource.xml'),
+  'colpicker-resources', join_paths(meson.source_root(), 'data', 'colpicker.gresource.xml'),
   source_dir: join_paths(meson.source_root(), 'data'),
-  c_name: 'gcolor3'
+  c_name: 'colpicker'
 )
 
 sources += gnome.genmarshal(
-  'gcolor3-marshalers',
-  sources: join_paths(meson.source_root(), 'data', 'gcolor3-marshalers.list'),
-  prefix: '_gcolor3_marshal'
+  'colpicker-marshalers',
+  sources: join_paths(meson.source_root(), 'data', 'colpicker-marshalers.list'),
+  prefix: '_colpicker_marshal'
 )
+
+add_project_arguments('-DGDK_DISABLE_DEPRECATED', language : 'c')
+add_project_arguments('-DGTK_DISABLE_DEPRECATED', language : 'c')
 
 executable(
   meson.project_name(),

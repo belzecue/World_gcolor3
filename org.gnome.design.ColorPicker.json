@@ -1,14 +1,13 @@
 {
-    "app-id": "nl.hjdskes.gcolor3",
+    "app-id": "org.gnome.design.ColorPicker",
     "runtime": "org.gnome.Platform",
     "runtime-version": "master",
     "sdk": "org.gnome.Sdk",
-    "command": "gcolor3",
+    "command": "gnome-color-picker",
     "finish-args": [
         "--share=ipc",
         "--socket=x11",
-        "--socket=wayland",
-        "--metadata=X-DConf=migrate-path=/nl/hjdskes/gcolor3/"
+        "--socket=wayland"
     ],
     "cleanup": [
         "/share/man"
@@ -25,10 +24,10 @@
             ]
         },
         {
-            "name": "gcolor3",
+            "name": "color-picker",
             "buildsystem": "meson",
             "config-opts": [
-                    "--buildtype=debugoptimized"
+                "--buildtype=debugoptimized"
             ],
             "sources": [
                 {

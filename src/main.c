@@ -1,4 +1,4 @@
-/* Gcolor3 main
+/* ColPicker main
  *
  * Copyright (C) 2015-2016 Jente Hidskes <hjdskes@gmail.com>
  *
@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <glib/gi18n.h>
 
-#include "gcolor3-application.h"
+#include "colpicker-application.h"
 
 static gboolean
 _print_version_and_exit (UNUSED const gchar *name,
@@ -79,7 +79,7 @@ _parse_options (int argc, char **argv)
 int
 main (int argc, char **argv)
 {
-	Gcolor3Application *application;
+	ColPickerApplication *application;
 	int status;
 
 	bindtextdomain (GETTEXT_PACKAGE, LOCALE_DIR);
@@ -90,7 +90,7 @@ main (int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	application = gcolor3_application_new ();
+	application = colpicker_application_new ();
 	status = g_application_run (G_APPLICATION (application), argc, argv);
 	g_object_unref (application);
 

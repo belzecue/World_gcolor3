@@ -1,4 +1,4 @@
-/* Gcolor3ColorStore
+/* ColPickerColorStore
  *
  * Copyright (C) 2016 Jente Hidskes
  *
@@ -25,31 +25,31 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
-#include "gcolor3-color-item.h"
-#include "gcolor3-color-store.h"
-#include "gcolor3-marshalers.h"
+#include "colpicker-color-item.h"
+#include "colpicker-color-store.h"
+#include "colpicker-marshalers.h"
 
-struct _Gcolor3ColorStorePrivate {
+struct _ColPickerColorStorePrivate {
 	GKeyFile *colors;
 };
 
-static void gcolor3_color_store_iface_init (GListModelInterface *iface);
+static void colpicker_color_store_iface_init (GListModelInterface *iface);
 
-G_DEFINE_TYPE_WITH_CODE (Gcolor3ColorStore, gcolor3_color_store, G_TYPE_OBJECT,
-			 G_ADD_PRIVATE (Gcolor3ColorStore)
-			 G_IMPLEMENT_INTERFACE (G_TYPE_LIST_MODEL, gcolor3_color_store_iface_init)
+G_DEFINE_TYPE_WITH_CODE (ColPickerColorStore, colpicker_color_store, G_TYPE_OBJECT,
+			 G_ADD_PRIVATE (ColPickerColorStore)
+			 G_IMPLEMENT_INTERFACE (G_TYPE_LIST_MODEL, colpicker_color_store_iface_init)
 			)
 
 static inline gchar *
 get_user_file (void)
 {
-	return g_build_filename (g_get_user_config_dir (), "gcolor3", "config.ini", NULL);
+	return g_build_filename (g_get_user_config_dir (), "colpicker", "config.ini", NULL);
 }
 
 static inline gchar *
 get_user_dir (void)
 {
-	return g_build_filename (g_get_user_config_dir (), "gcolor3", NULL);
+	return g_build_filename (g_get_user_config_dir (), "colpicker", NULL);
 }
 
 static gboolean
@@ -70,20 +70,20 @@ ensure_user_dir (void)
 }
 
 static GType
-gcolor3_color_store_get_item_type (UNUSED GListModel *list)
+colpicker_color_store_get_item_type (UNUSED GListModel *list)
 {
 	return G_TYPE_VARIANT;
 }
 
 static guint
-gcolor3_color_store_get_n_items (GListModel *list)
+colpicker_color_store_get_n_items (GListModel *list)
 {
-	Gcolor3ColorStorePrivate *priv;
+	ColPickerColorStorePrivate *priv;
 	GError *error = NULL;
 	gsize n_items;
 	gchar **keys;
 
-	priv = gcolor3_color_store_get_instance_private (GCOLOR3_COLOR_STORE (list));
+	priv = colpicker_color_store_get_instance_private (COLPICKER_COLOR_STORE (list));
 
 	if (!(keys = g_key_file_get_keys (priv->colors, "Colors", &n_items, &error))) {
 		g_warning ("Cannot count number of items: %s\n", error->message);
@@ -95,16 +95,16 @@ gcolor3_color_store_get_n_items (GListModel *list)
 }
 
 static gpointer
-gcolor3_color_store_get_item (GListModel *list, guint position)
+colpicker_color_store_get_item (GListModel *list, guint position)
 {
-	Gcolor3ColorStorePrivate *priv;
-	Gcolor3ColorItem *item;
+	ColPickerColorStorePrivate *priv;
+	ColPickerColorItem *item;
 	GError *error = NULL;
 	gsize n_items;
 	gchar **keys;
 	gchar *value;
 
-	priv = gcolor3_color_store_get_instance_private (GCOLOR3_COLOR_STORE (list));
+	priv = colpicker_color_store_get_instance_private (COLPICKER_COLOR_STORE (list));
 
 	if (!(keys = g_key_file_get_keys (priv->colors, "Colors", &n_items, &error))) {
 		g_warning ("Cannot read colors: %s\n", error->message);
@@ -126,20 +126,20 @@ gcolor3_color_store_get_item (GListModel *list, guint position)
 		return g_variant_new ("(ss)", "Black", "#000000");
 	}
 
-	item = gcolor3_color_item_new (keys[position], value);
+	item = colpicker_color_item_new (keys[position], value);
 	g_free (value);
 	g_strfreev (keys);
 	return item;
 }
 
 static void
-gcolor3_color_store_dispose (GObject *object)
+colpicker_color_store_dispose (GObject *object)
 {
-	Gcolor3ColorStorePrivate *priv;
+	ColPickerColorStorePrivate *priv;
 	GError *error = NULL;
 	gchar *file;
 
-	priv = gcolor3_color_store_get_instance_private (GCOLOR3_COLOR_STORE (object));
+	priv = colpicker_color_store_get_instance_private (COLPICKER_COLOR_STORE (object));
 
 	// TODO: possibly only write to disk if contents changed?
 	file = get_user_file ();
@@ -150,33 +150,33 @@ gcolor3_color_store_dispose (GObject *object)
 	g_free (file);
 	g_key_file_free (priv->colors);
 
-	G_OBJECT_CLASS (gcolor3_color_store_parent_class)->dispose (object);
+	G_OBJECT_CLASS (colpicker_color_store_parent_class)->dispose (object);
 }
 
 static void
-gcolor3_color_store_class_init (Gcolor3ColorStoreClass *gcolor3_color_store_class)
+colpicker_color_store_class_init (ColPickerColorStoreClass *colpicker_color_store_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (gcolor3_color_store_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (colpicker_color_store_class);
 
-	object_class->dispose = gcolor3_color_store_dispose;
+	object_class->dispose = colpicker_color_store_dispose;
 }
 
 static void
-gcolor3_color_store_iface_init (GListModelInterface *iface)
+colpicker_color_store_iface_init (GListModelInterface *iface)
 {
-	iface->get_item_type = gcolor3_color_store_get_item_type;
-	iface->get_n_items = gcolor3_color_store_get_n_items;
-	iface->get_item = gcolor3_color_store_get_item;
+	iface->get_item_type = colpicker_color_store_get_item_type;
+	iface->get_n_items = colpicker_color_store_get_n_items;
+	iface->get_item = colpicker_color_store_get_item;
 }
 
 static void
-gcolor3_color_store_init (Gcolor3ColorStore *store)
+colpicker_color_store_init (ColPickerColorStore *store)
 {
-	Gcolor3ColorStorePrivate *priv;
+	ColPickerColorStorePrivate *priv;
 	gchar *file;
 	GError *error = NULL;
 
-	priv = gcolor3_color_store_get_instance_private (store);
+	priv = colpicker_color_store_get_instance_private (store);
 
 	priv->colors = g_key_file_new ();
 	file = get_user_file ();
@@ -192,24 +192,24 @@ gcolor3_color_store_init (Gcolor3ColorStore *store)
 	g_free (file);
 }
 
-Gcolor3ColorStore *
-gcolor3_color_store_new ()
+ColPickerColorStore *
+colpicker_color_store_new ()
 {
-	return g_object_new (GCOLOR3_TYPE_COLOR_STORE, NULL);
+	return g_object_new (COLPICKER_TYPE_COLOR_STORE, NULL);
 }
 
 gboolean
-gcolor3_color_store_add_color (Gcolor3ColorStore *store, const gchar *key, const gchar *hex)
+colpicker_color_store_add_color (ColPickerColorStore *store, const gchar *key, const gchar *hex)
 {
-	Gcolor3ColorStorePrivate *priv;
+	ColPickerColorStorePrivate *priv;
 	GError *error = NULL;
 	gchar **keys;
 	gsize length;
 
-	g_return_val_if_fail (GCOLOR3_IS_COLOR_STORE (store), FALSE);
+	g_return_val_if_fail (COLPICKER_IS_COLOR_STORE (store), FALSE);
 	g_return_val_if_fail (key != NULL && hex != NULL, FALSE);
 
-	priv = gcolor3_color_store_get_instance_private (store);
+	priv = colpicker_color_store_get_instance_private (store);
 
 	if (g_key_file_has_key (priv->colors, "Colors", key, NULL)) {
 		g_warning ("There is already a color named `%s`", key);
@@ -237,18 +237,18 @@ gcolor3_color_store_add_color (Gcolor3ColorStore *store, const gchar *key, const
 }
 
 gboolean
-gcolor3_color_store_remove_color (Gcolor3ColorStore *store, const gchar *key)
+colpicker_color_store_remove_color (ColPickerColorStore *store, const gchar *key)
 {
-	Gcolor3ColorStorePrivate *priv;
+	ColPickerColorStorePrivate *priv;
 	GError *error = NULL;
 	gchar **keys;
 	gsize length;
 	guint i;
 
-	g_return_val_if_fail (GCOLOR3_IS_COLOR_STORE (store), FALSE);
+	g_return_val_if_fail (COLPICKER_IS_COLOR_STORE (store), FALSE);
 	g_return_val_if_fail (key != NULL, FALSE);
 
-	priv = gcolor3_color_store_get_instance_private (store);
+	priv = colpicker_color_store_get_instance_private (store);
 
 	if (!(keys = g_key_file_get_keys (priv->colors, "Colors", &length, &error))) {
 		g_warning ("Cannot locate index of removal: %s. UI won't be updated\n", error->message);
@@ -275,18 +275,18 @@ gcolor3_color_store_remove_color (Gcolor3ColorStore *store, const gchar *key)
 }
 
 gboolean
-gcolor3_color_store_rename_color (Gcolor3ColorStore *store,
+colpicker_color_store_rename_color (ColPickerColorStore *store,
 				  const gchar *old_name,
 				  const gchar *new_name)
 {
-	Gcolor3ColorStorePrivate *priv;
+	ColPickerColorStorePrivate *priv;
 	gchar *hex;
 	GError *error = NULL;
 
-	g_return_val_if_fail (GCOLOR3_IS_COLOR_STORE (store), FALSE);
+	g_return_val_if_fail (COLPICKER_IS_COLOR_STORE (store), FALSE);
 	g_return_val_if_fail (old_name != NULL && new_name != NULL, FALSE);
 
-	priv = gcolor3_color_store_get_instance_private (store);
+	priv = colpicker_color_store_get_instance_private (store);
 
 	if (strlen (new_name) <= 0 || !g_strcmp0 (old_name, new_name)) {
 		return FALSE;
@@ -329,17 +329,17 @@ gcolor3_color_store_rename_color (Gcolor3ColorStore *store,
 }
 
 void
-gcolor3_color_store_foreach (Gcolor3ColorStore           *store,
-			     Gcolor3ColorStoreForeachFunc func,
+colpicker_color_store_foreach (ColPickerColorStore           *store,
+			     ColPickerColorStoreForeachFunc func,
 			     gpointer                     user_data)
 {
-	Gcolor3ColorStorePrivate *priv;
+	ColPickerColorStorePrivate *priv;
 	GError *error = NULL;
 	gchar **keys = NULL;
 	gsize length;
 
-	g_return_if_fail (GCOLOR3_IS_COLOR_STORE (store));
-	priv = gcolor3_color_store_get_instance_private (store);
+	g_return_if_fail (COLPICKER_IS_COLOR_STORE (store));
+	priv = colpicker_color_store_get_instance_private (store);
 
 	if (!(keys = g_key_file_get_keys (priv->colors, "Colors", &length, &error))) {
 		g_warning ("Error reading keys: %s. This is harmless if this is the first run", error->message);
@@ -362,8 +362,8 @@ gcolor3_color_store_foreach (Gcolor3ColorStore           *store,
 }
 
 gboolean
-gcolor3_color_store_empty (Gcolor3ColorStore *store)
+colpicker_color_store_empty (ColPickerColorStore *store)
 {
-	g_return_val_if_fail (GCOLOR3_IS_COLOR_STORE (store), TRUE);
-	return gcolor3_color_store_get_n_items (G_LIST_MODEL (store)) == 0;
+	g_return_val_if_fail (COLPICKER_IS_COLOR_STORE (store), TRUE);
+	return colpicker_color_store_get_n_items (G_LIST_MODEL (store)) == 0;
 }

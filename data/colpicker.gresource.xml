@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
-  <gresource prefix="/nl/hjdskes/gcolor3/">
+  <gresource prefix="/org/gnome/design/ColorPicker/">
     <file preprocess="xml-stripblanks">shortcuts.ui</file>
     <file preprocess="xml-stripblanks">menus.ui</file>
     <file preprocess="xml-stripblanks">color-row.ui</file>

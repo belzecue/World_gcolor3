@@ -5,13 +5,13 @@ stages:
   - deploy
 
 variables:
-    BUNDLE: "gcolor3-nightly.flatpak"
-    MANIFEST_PATH: "nl.hjdskes.gcolor3.json"
-    FLATPAK_MODULE: "gcolor3"
+    BUNDLE: "color-picker-nightly.flatpak"
+    MANIFEST_PATH: "org.gnome.design.ColorPicker.json"
+    FLATPAK_MODULE: "color-picker"
 
 flatpak:
   extends: '.flatpak'
   image: "registry.gitlab.gnome.org/gnome/gnome-runtime-images/rust_bundle:master"
   variables:
     RUNTIME_REPO: 'https://nightly.gnome.org/gnome-nightly.flatpakrepo'
-    APP_ID: "nl.hjdskes.gcolor3"
+    APP_ID: "org.gnome.design.ColorPicker"

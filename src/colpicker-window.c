@@ -1,4 +1,4 @@
-/* Gcolor3Window
+/* ColPickerWindow
  *
  * Copyright (C) 2015-2018 Jente Hidskes
  *
@@ -26,11 +26,11 @@
 #include <glib/gprintf.h>
 #include <glib/gi18n.h>
 
-#include "gcolor3-color-item.h"
-#include "gcolor3-color-row.h"
-#include "gcolor3-color-selection.h"
-#include "gcolor3-color-store.h"
-#include "gcolor3-window.h"
+#include "colpicker-color-item.h"
+#include "colpicker-color-row.h"
+#include "colpicker-color-selection.h"
+#include "colpicker-color-store.h"
+#include "colpicker-window.h"
 #include "utils.h"
 
 enum {
@@ -38,7 +38,7 @@ enum {
 	PROP_STORE,
 };
 
-struct _Gcolor3WindowPrivate {
+struct _ColPickerWindowPrivate {
 	GtkWidget *button_primary_menu;
 	GtkWidget *button_save;
 	GtkWidget *entry;
@@ -49,15 +49,15 @@ struct _Gcolor3WindowPrivate {
 	GtkWidget *listbox;
 	GtkWidget *empty_placeholder;
 
-	Gcolor3ColorStore *store;
+	ColPickerColorStore *store;
 
 	GdkRGBA current;
 };
 
-G_DEFINE_TYPE_WITH_PRIVATE (Gcolor3Window, gcolor3_window, GTK_TYPE_APPLICATION_WINDOW)
+G_DEFINE_TYPE_WITH_PRIVATE (ColPickerWindow, colpicker_window, GTK_TYPE_APPLICATION_WINDOW)
 
 static void
-save_color (Gcolor3WindowPrivate *priv)
+save_color (ColPickerWindowPrivate *priv)
 {
 	const gchar *key;
 	gchar *hex;
@@ -74,27 +74,27 @@ save_color (Gcolor3WindowPrivate *priv)
 	 * already used), which in turn will update the list box due
 	 * to the binding between the store's list model and the list
 	 * box. */
-	gcolor3_color_store_add_color (priv->store, key, hex);
+	colpicker_color_store_add_color (priv->store, key, hex);
 	g_free (hex);
 
-	if (!gcolor3_color_store_empty (priv->store)) {
+	if (!colpicker_color_store_empty (priv->store)) {
 		gtk_stack_set_visible_child (GTK_STACK (priv->list_stack),
 					     priv->scroll);
 	}
 }
 
 static gboolean
-gcolor3_window_picker_page_key_handler (GtkWidget   *widget,
+colpicker_window_picker_page_key_handler (GtkWidget   *widget,
 					GdkEventKey *event,
 					gpointer     user_data)
 {
-	Gcolor3WindowPrivate *priv;
+	ColPickerWindowPrivate *priv;
 
 	if (event->type != GDK_KEY_PRESS) {
 		return GDK_EVENT_PROPAGATE;
 	}
 
-	priv = gcolor3_window_get_instance_private (GCOLOR3_WINDOW (user_data));
+	priv = colpicker_window_get_instance_private (COLPICKER_WINDOW (user_data));
 
 	switch (event->keyval) {
 	case GDK_KEY_s:
@@ -111,66 +111,66 @@ gcolor3_window_picker_page_key_handler (GtkWidget   *widget,
 }
 
 static void
-gcolor3_window_entry_activated (UNUSED GtkEntry *entry, gpointer user_data)
+colpicker_window_entry_activated (UNUSED GtkEntry *entry, gpointer user_data)
 {
-	Gcolor3WindowPrivate *priv;
+	ColPickerWindowPrivate *priv;
 
-	priv = gcolor3_window_get_instance_private (GCOLOR3_WINDOW (user_data));
+	priv = colpicker_window_get_instance_private (COLPICKER_WINDOW (user_data));
 	/* Emulate a button click, to give the user visual feedback of
 	   the save action. */
 	g_signal_emit_by_name (priv->button_save, "activate");
 }
 
 static void
-gcolor3_window_save_button_clicked (UNUSED GtkButton *button, gpointer user_data)
+colpicker_window_save_button_clicked (UNUSED GtkButton *button, gpointer user_data)
 {
-	Gcolor3WindowPrivate *priv;
+	ColPickerWindowPrivate *priv;
 
-	priv = gcolor3_window_get_instance_private (GCOLOR3_WINDOW (user_data));
+	priv = colpicker_window_get_instance_private (COLPICKER_WINDOW (user_data));
 	save_color (priv);
 }
 
 static void
-gcolor3_window_color_row_deleted (Gcolor3ColorRow *row, gpointer user_data)
+colpicker_window_color_row_deleted (ColPickerColorRow *row, gpointer user_data)
 {
-	Gcolor3WindowPrivate *priv;
+	ColPickerWindowPrivate *priv;
 	gchar *key;
 
-	priv = gcolor3_window_get_instance_private (GCOLOR3_WINDOW (user_data));
+	priv = colpicker_window_get_instance_private (COLPICKER_WINDOW (user_data));
 
 	g_object_get (row, "key", &key, NULL);
 	/* Removing a color from the store will automatically remove
 	   it from the list box, due to the binding between the two. */
-	gcolor3_color_store_remove_color (priv->store, key);
+	colpicker_color_store_remove_color (priv->store, key);
 	g_free (key);
 
-	if (gcolor3_color_store_empty (priv->store)) {
+	if (colpicker_color_store_empty (priv->store)) {
 		gtk_stack_set_visible_child (GTK_STACK (priv->list_stack),
 					     priv->empty_placeholder);
 	}
 }
 
 static void
-gcolor3_window_color_row_renamed (UNUSED Gcolor3ColorRow *row,
+colpicker_window_color_row_renamed (UNUSED ColPickerColorRow *row,
 				  const gchar *old_name,
 				  const gchar *new_name,
 				  gpointer user_data)
 {
-	Gcolor3WindowPrivate *priv;
+	ColPickerWindowPrivate *priv;
 
-	priv = gcolor3_window_get_instance_private (GCOLOR3_WINDOW (user_data));
-	gcolor3_color_store_rename_color (priv->store, old_name, new_name);
+	priv = colpicker_window_get_instance_private (COLPICKER_WINDOW (user_data));
+	colpicker_color_store_rename_color (priv->store, old_name, new_name);
 }
 
 static void
-gcolor3_window_action_change_page (UNUSED GSimpleAction *action,
+colpicker_window_action_change_page (UNUSED GSimpleAction *action,
 				   UNUSED GVariant      *parameter,
 				   gpointer              user_data)
 {
-	Gcolor3WindowPrivate *priv;
+	ColPickerWindowPrivate *priv;
 	const gchar *page;
 
-	priv = gcolor3_window_get_instance_private (GCOLOR3_WINDOW (user_data));
+	priv = colpicker_window_get_instance_private (COLPICKER_WINDOW (user_data));
 
 	page = gtk_stack_get_visible_child_name (GTK_STACK (priv->page_stack));
 	if (g_strcmp0 (page, "saved-colors") == 0) {
@@ -181,28 +181,28 @@ gcolor3_window_action_change_page (UNUSED GSimpleAction *action,
 }
 
 static const GActionEntry window_actions[] = {
-	{ "change-page", gcolor3_window_action_change_page, NULL, NULL, NULL },
+	{ "change-page", colpicker_window_action_change_page, NULL, NULL, NULL },
 };
 
 static void
-gcolor3_window_picker_changed (Gcolor3ColorSelection *picker, gpointer user_data)
+colpicker_window_picker_changed (ColPickerColorSelection *picker, gpointer user_data)
 {
-	Gcolor3WindowPrivate *priv;
+	ColPickerWindowPrivate *priv;
 
-	priv = gcolor3_window_get_instance_private (GCOLOR3_WINDOW (user_data));
+	priv = colpicker_window_get_instance_private (COLPICKER_WINDOW (user_data));
 
-	gcolor3_color_selection_get_current_color (GCOLOR3_COLOR_SELECTION (picker), &priv->current);
+	colpicker_color_selection_get_current_color (COLPICKER_COLOR_SELECTION (picker), &priv->current);
 }
 
 static void
-gcolor3_window_stack_changed (GtkStack          *stack,
+colpicker_window_stack_changed (GtkStack          *stack,
 			      UNUSED GParamSpec *pspec,
 			      gpointer           user_data)
 {
-	Gcolor3WindowPrivate *priv;
+	ColPickerWindowPrivate *priv;
 	const gchar *page;
 
-	priv = gcolor3_window_get_instance_private (GCOLOR3_WINDOW (user_data));
+	priv = colpicker_window_get_instance_private (COLPICKER_WINDOW (user_data));
 
 	page = gtk_stack_get_visible_child_name (stack);
 	if (g_strcmp0 (page, "saved-colors") == 0) {
@@ -215,14 +215,14 @@ gcolor3_window_stack_changed (GtkStack          *stack,
 }
 
 static void
-gcolor3_window_selection_changed (GtkListBox *listbox, gpointer user_data)
+colpicker_window_selection_changed (GtkListBox *listbox, gpointer user_data)
 {
-	Gcolor3WindowPrivate *priv;
+	ColPickerWindowPrivate *priv;
 	GtkListBoxRow *row;
 	GdkRGBA new, current;
 	gchar *color;
 
-	priv = gcolor3_window_get_instance_private (GCOLOR3_WINDOW (user_data));
+	priv = colpicker_window_get_instance_private (COLPICKER_WINDOW (user_data));
 	row = gtk_list_box_get_selected_row (listbox);
 
 	if (!row) {
@@ -238,47 +238,47 @@ gcolor3_window_selection_changed (GtkListBox *listbox, gpointer user_data)
 	g_free (color);
 
 	/* Save the old color in the picker. */
-	gcolor3_color_selection_get_current_color (GCOLOR3_COLOR_SELECTION (priv->picker), &current);
-	gcolor3_color_selection_set_previous_color (GCOLOR3_COLOR_SELECTION (priv->picker), &current);
-	gcolor3_color_selection_set_current_color (GCOLOR3_COLOR_SELECTION (priv->picker), &new);
+	colpicker_color_selection_get_current_color (COLPICKER_COLOR_SELECTION (priv->picker), &current);
+	colpicker_color_selection_set_previous_color (COLPICKER_COLOR_SELECTION (priv->picker), &current);
+	colpicker_color_selection_set_current_color (COLPICKER_COLOR_SELECTION (priv->picker), &new);
 }
 
 static GtkWidget *
 create_widget_func (gpointer item, gpointer user_data)
 {
-	Gcolor3ColorRow *row;
+	ColPickerColorRow *row;
 	gchar *key, *hex;
 
-	g_object_get ((Gcolor3ColorItem *) item, "key", &key, "hex", &hex, NULL);
-	row = gcolor3_color_row_new (key, hex);
+	g_object_get ((ColPickerColorItem *) item, "key", &key, "hex", &hex, NULL);
+	row = colpicker_color_row_new (key, hex);
 	g_signal_connect (row, "color-removed",
-			  G_CALLBACK (gcolor3_window_color_row_deleted), user_data);
+			  G_CALLBACK (colpicker_window_color_row_deleted), user_data);
 	g_signal_connect (row, "color-renamed",
-			  G_CALLBACK (gcolor3_window_color_row_renamed), user_data);
+			  G_CALLBACK (colpicker_window_color_row_renamed), user_data);
 	g_free (key);
 	g_free (hex);
 	return GTK_WIDGET (row);
 }
 
 static void
-gcolor3_window_set_property (GObject      *object,
+colpicker_window_set_property (GObject      *object,
 			     guint         prop_id,
 			     const GValue *value,
 			     GParamSpec   *pspec)
 {
-	Gcolor3WindowPrivate *priv;
+	ColPickerWindowPrivate *priv;
 
-	priv = gcolor3_window_get_instance_private (GCOLOR3_WINDOW (object));
+	priv = colpicker_window_get_instance_private (COLPICKER_WINDOW (object));
 
 	switch (prop_id) {
 		case PROP_STORE:
-			priv->store = GCOLOR3_COLOR_STORE (g_value_dup_object (value));
+			priv->store = COLPICKER_COLOR_STORE (g_value_dup_object (value));
 			gtk_list_box_bind_model (GTK_LIST_BOX (priv->listbox),
 						 G_LIST_MODEL (priv->store),
 						 create_widget_func,
 						 object,
 						 NULL);
-			if (gcolor3_color_store_empty (priv->store)) {
+			if (colpicker_color_store_empty (priv->store)) {
 				gtk_stack_set_visible_child (GTK_STACK (priv->list_stack),
 							     priv->empty_placeholder);
 			} else {
@@ -293,14 +293,14 @@ gcolor3_window_set_property (GObject      *object,
 }
 
 static void
-gcolor3_window_get_property (GObject    *object,
+colpicker_window_get_property (GObject    *object,
 			     guint       prop_id,
 			     GValue     *value,
 			     GParamSpec *pspec)
 {
-	Gcolor3WindowPrivate *priv;
+	ColPickerWindowPrivate *priv;
 
-	priv = gcolor3_window_get_instance_private (GCOLOR3_WINDOW (object));
+	priv = colpicker_window_get_instance_private (COLPICKER_WINDOW (object));
 
 	switch (prop_id) {
 		case PROP_STORE:
@@ -313,89 +313,89 @@ gcolor3_window_get_property (GObject    *object,
 }
 
 static void
-gcolor3_window_dispose (GObject *object)
+colpicker_window_dispose (GObject *object)
 {
-	Gcolor3WindowPrivate *priv;
+	ColPickerWindowPrivate *priv;
 
-	priv = gcolor3_window_get_instance_private (GCOLOR3_WINDOW (object));
+	priv = colpicker_window_get_instance_private (COLPICKER_WINDOW (object));
 
 	g_clear_object (&priv->store);
 
-	G_OBJECT_CLASS (gcolor3_window_parent_class)->dispose (object);
+	G_OBJECT_CLASS (colpicker_window_parent_class)->dispose (object);
 }
 
 static void
-gcolor3_window_finalize (GObject *object)
+colpicker_window_finalize (GObject *object)
 {
-	Gcolor3WindowPrivate *priv;
+	ColPickerWindowPrivate *priv;
 	gchar *hex;
 
-	priv = gcolor3_window_get_instance_private (GCOLOR3_WINDOW (object));
+	priv = colpicker_window_get_instance_private (COLPICKER_WINDOW (object));
 
 	hex = hex_value (&priv->current);
 	g_printf ("%s\n", hex);
 	g_free (hex);
 
-	G_OBJECT_CLASS (gcolor3_window_parent_class)->finalize (object);
+	G_OBJECT_CLASS (colpicker_window_parent_class)->finalize (object);
 }
 
 static void
-gcolor3_window_class_init (Gcolor3WindowClass *gcolor3_window_class)
+colpicker_window_class_init (ColPickerWindowClass *colpicker_window_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (gcolor3_window_class);
-	GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (gcolor3_window_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (colpicker_window_class);
+	GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (colpicker_window_class);
 
-	object_class->set_property = gcolor3_window_set_property;
-	object_class->get_property = gcolor3_window_get_property;
-	object_class->dispose = gcolor3_window_dispose;
-	object_class->finalize = gcolor3_window_finalize;
+	object_class->set_property = colpicker_window_set_property;
+	object_class->get_property = colpicker_window_get_property;
+	object_class->dispose = colpicker_window_dispose;
+	object_class->finalize = colpicker_window_finalize;
 
 	g_object_class_install_property (object_class, PROP_STORE,
 					 g_param_spec_object ("color-store",
 							      "ColorStore",
 							      "The managed colors",
-							      GCOLOR3_TYPE_COLOR_STORE,
+							      COLPICKER_TYPE_COLOR_STORE,
 							      G_PARAM_READWRITE |
 							      G_PARAM_CONSTRUCT_ONLY |
 							      G_PARAM_STATIC_STRINGS));
 
-	gtk_widget_class_set_template_from_resource (widget_class, "/nl/hjdskes/gcolor3/window.ui");
+	gtk_widget_class_set_template_from_resource (widget_class, "/org/gnome/design/ColorPicker/window.ui");
 
-	gtk_widget_class_bind_template_child_private (widget_class, Gcolor3Window, button_primary_menu);
-	gtk_widget_class_bind_template_child_private (widget_class, Gcolor3Window, button_save);
-	gtk_widget_class_bind_template_child_private (widget_class, Gcolor3Window, entry);
-	gtk_widget_class_bind_template_child_private (widget_class, Gcolor3Window, page_stack);
-	gtk_widget_class_bind_template_child_private (widget_class, Gcolor3Window, list_stack);
-	gtk_widget_class_bind_template_child_private (widget_class, Gcolor3Window, scroll);
-	gtk_widget_class_bind_template_child_private (widget_class, Gcolor3Window, listbox);
-	gtk_widget_class_bind_template_child_private (widget_class, Gcolor3Window, empty_placeholder);
+	gtk_widget_class_bind_template_child_private (widget_class, ColPickerWindow, button_primary_menu);
+	gtk_widget_class_bind_template_child_private (widget_class, ColPickerWindow, button_save);
+	gtk_widget_class_bind_template_child_private (widget_class, ColPickerWindow, entry);
+	gtk_widget_class_bind_template_child_private (widget_class, ColPickerWindow, page_stack);
+	gtk_widget_class_bind_template_child_private (widget_class, ColPickerWindow, list_stack);
+	gtk_widget_class_bind_template_child_private (widget_class, ColPickerWindow, scroll);
+	gtk_widget_class_bind_template_child_private (widget_class, ColPickerWindow, listbox);
+	gtk_widget_class_bind_template_child_private (widget_class, ColPickerWindow, empty_placeholder);
 
-	gtk_widget_class_bind_template_callback (widget_class, gcolor3_window_stack_changed);
-	gtk_widget_class_bind_template_callback (widget_class, gcolor3_window_picker_changed);
-	gtk_widget_class_bind_template_callback (widget_class, gcolor3_window_selection_changed);
-	gtk_widget_class_bind_template_callback (widget_class, gcolor3_window_picker_page_key_handler);
-	gtk_widget_class_bind_template_callback (widget_class, gcolor3_window_entry_activated);
-	gtk_widget_class_bind_template_callback (widget_class, gcolor3_window_save_button_clicked);
+	gtk_widget_class_bind_template_callback (widget_class, colpicker_window_stack_changed);
+	gtk_widget_class_bind_template_callback (widget_class, colpicker_window_picker_changed);
+	gtk_widget_class_bind_template_callback (widget_class, colpicker_window_selection_changed);
+	gtk_widget_class_bind_template_callback (widget_class, colpicker_window_picker_page_key_handler);
+	gtk_widget_class_bind_template_callback (widget_class, colpicker_window_entry_activated);
+	gtk_widget_class_bind_template_callback (widget_class, colpicker_window_save_button_clicked);
 }
 
 static void
-gcolor3_window_init (Gcolor3Window *window)
+colpicker_window_init (ColPickerWindow *window)
 {
-	Gcolor3WindowPrivate *priv;
+	ColPickerWindowPrivate *priv;
 	GtkBuilder *menu_builder;
 	GMenuModel *model;
 
-	priv = gcolor3_window_get_instance_private (window);
+	priv = colpicker_window_get_instance_private (window);
 
 	gtk_widget_init_template (GTK_WIDGET (window));
 
 	/* Add the primary menu */
-	menu_builder = gtk_builder_new_from_resource ("/nl/hjdskes/gcolor3/menus.ui");
+	menu_builder = gtk_builder_new_from_resource ("/org/gnome/design/ColorPicker/menus.ui");
 	model = G_MENU_MODEL (gtk_builder_get_object (menu_builder, "primary-menu"));
 	gtk_menu_button_set_menu_model (GTK_MENU_BUTTON (priv->button_primary_menu), model);
 
 	/* Add the custom color selection widget. */
-	priv->picker = gcolor3_color_selection_new ();
+	priv->picker = colpicker_color_selection_new ();
 	gtk_widget_set_valign (priv->picker, GTK_ALIGN_CENTER);
 	gtk_widget_set_halign (priv->picker, GTK_ALIGN_CENTER);
 	gtk_widget_set_margin_top (priv->picker, 24);
@@ -403,16 +403,16 @@ gcolor3_window_init (Gcolor3Window *window)
 	gtk_widget_set_margin_start (priv->picker, 24);
 	gtk_widget_set_margin_end (priv->picker, 24);
 	g_signal_connect (priv->picker, "color-changed",
-			  G_CALLBACK (gcolor3_window_picker_changed), window);
+			  G_CALLBACK (colpicker_window_picker_changed), window);
 	g_signal_connect (priv->picker, "key-press-event",
-			  G_CALLBACK (gcolor3_window_picker_page_key_handler), window);
+			  G_CALLBACK (colpicker_window_picker_page_key_handler), window);
 	gtk_stack_add_titled (GTK_STACK (priv->page_stack), priv->picker, "picker", _("Picker"));
 	gtk_container_child_set (GTK_CONTAINER (priv->page_stack), priv->picker, "position", 0, NULL);
 	gtk_widget_set_visible (priv->picker, TRUE);
 
 	/* Call the callback to initialise the GtkEntry and to prevent
 	 * saving #000000 when saving the white color right away. */
-	gcolor3_window_picker_changed (GCOLOR3_COLOR_SELECTION (priv->picker), window);
+	colpicker_window_picker_changed (COLPICKER_COLOR_SELECTION (priv->picker), window);
 
 	g_action_map_add_action_entries (G_ACTION_MAP (window),
 					 window_actions,
@@ -423,20 +423,20 @@ gcolor3_window_init (Gcolor3Window *window)
 	gtk_stack_set_visible_child_name (GTK_STACK (priv->page_stack), "picker");
 }
 
-Gcolor3Window *
-gcolor3_window_new (Gcolor3Application *application, Gcolor3ColorStore *store)
+ColPickerWindow *
+colpicker_window_new (ColPickerApplication *application, ColPickerColorStore *store)
 {
-	g_return_val_if_fail (GCOLOR3_IS_APPLICATION (application), NULL);
-	g_return_val_if_fail (GCOLOR3_IS_COLOR_STORE (store), NULL);
+	g_return_val_if_fail (COLPICKER_IS_APPLICATION (application), NULL);
+	g_return_val_if_fail (COLPICKER_IS_COLOR_STORE (store), NULL);
 
-	return g_object_new (GCOLOR3_TYPE_WINDOW,
+	return g_object_new (COLPICKER_TYPE_WINDOW,
 			     "application", application,
 			     "color-store", store,
 			     NULL);
 }
 
 void
-gcolor3_window_destroy (Gcolor3Window *window, UNUSED gpointer user_data)
+colpicker_window_destroy (ColPickerWindow *window, UNUSED gpointer user_data)
 {
 	g_return_if_fail (window != NULL);
 	gtk_widget_destroy (GTK_WIDGET (window));

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Copyright 2016, 2018 Jente Hidskes <hjdskes@gmail.com> -->
 <component type="desktop-application">
-  <id>nl.hjdskes.gcolor3</id>
+  <id>org.gnome.design.ColorPicker</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-2.0+</project_license>
   <name>Color Picker</name>
@@ -28,22 +28,22 @@
   </kudos>
   <screenshots>
     <screenshot type="default">
-      <image>https://gitlab.gnome.org/World/gcolor3/-/raw/master/picker.png</image>
+      <image>https://gitlab.gnome.org/World/colpicker/-/raw/master/picker.png</image>
       <caption>The picker and the color palette</caption>
     </screenshot>
     <screenshot>
-      <image>https://gitlab.gnome.org/World/gcolor3/-/raw/master/saved.png</image>
+      <image>https://gitlab.gnome.org/World/colpicker/-/raw/master/saved.png</image>
       <caption>The list of saved colors</caption>
     </screenshot>
   </screenshots>
-  <url type="homepage">https://hjdskes.nl/projects/gcolor3/</url>
-  <url type="bugtracker">https://gitlab.gnome.org/World/gcolor3/issues</url>
-  <url type="help">https://gitlab.gnome.org/World/gcolor3/issues</url>
+  <url type="homepage">https://hjdskes.nl/projects/colpicker/</url>
+  <url type="bugtracker">https://gitlab.gnome.org/World/colpicker/issues</url>
+  <url type="help">https://gitlab.gnome.org/World/colpicker/issues</url>
   <!-- Translators: please do NOT translate this. -->
   <developer_name>Christopher Davis</developer_name>
   <update_contact>christopherdavis_at_gnome.org</update_contact>
-  <translation type="gettext">gcolor3</translation>
-  <!-- Validate with `appstream-util validate nl.hjdskes.gcolor3.appdata.xml.in`. -->
+  <translation type="gettext">colpicker</translation>
+  <!-- Validate with `appstream-util validate @APP_ID@`. -->
   <releases>
     <release version="2.4.0" date="2020-08-24">
       <description>
@@ -98,7 +98,7 @@
           <ul>
             <li>Centrally manage colors between several running instances;</li>
             <li>Follow the XDG directory specification for the configuration file.
-                This means that the configuration file has moved from `~/.rgb.ini` to `$XDG_CONFIG_HOME/gcolor3/config.ini`;</li>
+                This means that the configuration file has moved from `~/.rgb.ini` to `$XDG_CONFIG_HOME/colpicker/config.ini`;</li>
             <li>Copy the selected color's hex value from the tree view using Ctrl-C;</li>
             <li>Make the main window resizable;</li>
             <li>Translation updates.</li>
@@ -109,5 +109,5 @@
     </release>
   </releases>
   <content_rating type="oars-1.0" />
-  <launchable type="desktop-id">nl.hjdskes.gcolor3.desktop</launchable>
+  <launchable type="desktop-id">org.gnome.design.ColorPicker.desktop</launchable>
 </component>

@@ -1,15 +1,15 @@
 [Desktop Entry]
 Name=Color Picker
 Comment=Choose colors from the picker or the screen
-Exec=gcolor3
+Exec=colpicker
 # Translators: Do NOT translate or transliterate this text (this is an icon file name)!
-Icon=nl.hjdskes.gcolor3
+Icon=org.gnome.design.ColorPicker
 StartupNotify=true
 Terminal=false
 Type=Application
 Categories=GNOME;GTK;Graphics;
-# Translators: Extra keywords that can be used to search for Gcolor3 in GNOME Shell and Unity
+# Translators: Extra keywords that can be used to search for Color Picker in GNOME Shell and Unity
 Keywords=Color;Picker;Palette;
 
 # Required for Unity to show the application name.
-X-Ubuntu-Gettext-Domain=gcolor3
+X-Ubuntu-Gettext-Domain=colpicker

@@ -1,4 +1,4 @@
-/* Gcolor3ColorItem
+/* ColPickerColorItem
  *
  * Copyright (C) 2018 Jente Hidskes
  *
@@ -21,7 +21,7 @@
 
 #include "config.h"
 
-#include "gcolor3-color-item.h"
+#include "colpicker-color-item.h"
 
 enum {
       PROP_0,
@@ -29,22 +29,22 @@ enum {
       PROP_HEX,
 };
 
-struct _Gcolor3ColorItemPrivate {
+struct _ColPickerColorItemPrivate {
 	gchar *key;
 	const gchar *hex;
 };
 
-G_DEFINE_TYPE_WITH_PRIVATE (Gcolor3ColorItem, gcolor3_color_item, G_TYPE_OBJECT)
+G_DEFINE_TYPE_WITH_PRIVATE (ColPickerColorItem, colpicker_color_item, G_TYPE_OBJECT)
 
 static void
-gcolor3_color_item_get_property (GObject    *object,
+colpicker_color_item_get_property (GObject    *object,
 				 guint       prop_id,
 				 GValue     *value,
 				 GParamSpec *pspec)
 {
-	Gcolor3ColorItemPrivate *priv;
+	ColPickerColorItemPrivate *priv;
 
-	priv = gcolor3_color_item_get_instance_private (GCOLOR3_COLOR_ITEM (object));
+	priv = colpicker_color_item_get_instance_private (COLPICKER_COLOR_ITEM (object));
 
 	switch (prop_id) {
 	case PROP_KEY:
@@ -60,14 +60,14 @@ gcolor3_color_item_get_property (GObject    *object,
 }
 
 static void
-gcolor3_color_item_set_property (GObject      *object,
+colpicker_color_item_set_property (GObject      *object,
 				 guint         prop_id,
 				 const GValue *value,
 				 GParamSpec   *pspec)
 {
-	Gcolor3ColorItemPrivate *priv;
+	ColPickerColorItemPrivate *priv;
 
-	priv = gcolor3_color_item_get_instance_private (GCOLOR3_COLOR_ITEM (object));
+	priv = colpicker_color_item_get_instance_private (COLPICKER_COLOR_ITEM (object));
 
 	switch (prop_id) {
 	case PROP_KEY:
@@ -83,25 +83,25 @@ gcolor3_color_item_set_property (GObject      *object,
 }
 
 static void
-gcolor3_color_item_finalize (GObject *object)
+colpicker_color_item_finalize (GObject *object)
 {
-	Gcolor3ColorItemPrivate *priv;
+	ColPickerColorItemPrivate *priv;
 
-	priv = gcolor3_color_item_get_instance_private (GCOLOR3_COLOR_ITEM (object));
+	priv = colpicker_color_item_get_instance_private (COLPICKER_COLOR_ITEM (object));
 
 	g_free (priv->key);
 
-	G_OBJECT_CLASS (gcolor3_color_item_parent_class)->finalize (object);
+	G_OBJECT_CLASS (colpicker_color_item_parent_class)->finalize (object);
 }
 
 static void
-gcolor3_color_item_class_init (Gcolor3ColorItemClass *klass)
+colpicker_color_item_class_init (ColPickerColorItemClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	object_class->finalize = gcolor3_color_item_finalize;
-	object_class->get_property = gcolor3_color_item_get_property;
-	object_class->set_property = gcolor3_color_item_set_property;
+	object_class->finalize = colpicker_color_item_finalize;
+	object_class->get_property = colpicker_color_item_get_property;
+	object_class->set_property = colpicker_color_item_set_property;
 
 	g_object_class_install_property (object_class, PROP_KEY,
 					 g_param_spec_string ("key",
@@ -123,15 +123,15 @@ gcolor3_color_item_class_init (Gcolor3ColorItemClass *klass)
 }
 
 static void
-gcolor3_color_item_init (Gcolor3ColorItem *item)
+colpicker_color_item_init (ColPickerColorItem *item)
 {
 }
 
-Gcolor3ColorItem *
-gcolor3_color_item_new (const gchar *key, const gchar *hex)
+ColPickerColorItem *
+colpicker_color_item_new (const gchar *key, const gchar *hex)
 {
 	g_return_val_if_fail (key != NULL, NULL);
 	g_return_val_if_fail (hex != NULL, NULL);
 
-	return g_object_new (GCOLOR3_TYPE_COLOR_ITEM, "key", key, "hex", hex, NULL);
+	return g_object_new (COLPICKER_TYPE_COLOR_ITEM, "key", key, "hex", hex, NULL);
 }

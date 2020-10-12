@@ -22,7 +22,7 @@
  * files for a list of changes.  These files are distributed with
  * GTK at ftp://ftp.gtk.org/pub/gtk/.
  *
- * Updated and adapted for inclusion in Gcolor3 by Jente Hidskes 2017.
+ * Updated and adapted for inclusion in ColPicker by Jente Hidskes 2017.
  */
 
 #include "config.h"
@@ -30,8 +30,8 @@
 // TODO: replace gtk_container_set_focus_chain()
 #define GDK_DISABLE_DEPRECATION_WARNINGS
 
-#include "gcolor3-color-selection.h"
-#include "gcolor3-hsv.h"
+#include "colpicker-color-selection.h"
+#include "colpicker-hsv.h"
 #include "utils.h"
 
 #include <math.h>
@@ -54,9 +54,9 @@
 /**
  * SECTION:gtkcolorsel
  * @Short_description: Widget used to select a color
- * @Title: Gcolor3ColorSelection
+ * @Title: ColPickerColorSelection
  *
- * The #Gcolor3ColorSelection is a widget that is used to select
+ * The #ColPickerColorSelection is a widget that is used to select
  * a color.  It consists of a color wheel and number of sliders
  * and entry boxes for color parameters such as hue, saturation,
  * value, red, green, blue, and opacity.
@@ -117,7 +117,7 @@ enum {
 };
 
 
-struct _Gcolor3ColorSelectionPrivate
+struct _ColPickerColorSelectionPrivate
 {
   guint has_opacity       : 1;
   guint has_palette       : 1;
@@ -160,23 +160,23 @@ struct _Gcolor3ColorSelectionPrivate
 };
 
 
-static void gcolor3_color_selection_destroy         (GtkWidget               *widget);
-static void gcolor3_color_selection_finalize        (GObject                 *object);
-static void update_color                            (Gcolor3ColorSelection   *colorsel);
-static void gcolor3_color_selection_set_property    (GObject                 *object,
+static void colpicker_color_selection_destroy         (GtkWidget               *widget);
+static void colpicker_color_selection_finalize        (GObject                 *object);
+static void update_color                            (ColPickerColorSelection   *colorsel);
+static void colpicker_color_selection_set_property    (GObject                 *object,
                                                      guint                    prop_id,
                                                      const GValue            *value,
                                                      GParamSpec              *pspec);
-static void gcolor3_color_selection_get_property    (GObject                 *object,
+static void colpicker_color_selection_get_property    (GObject                 *object,
                                                      guint                    prop_id,
                                                      GValue                  *value,
                                                      GParamSpec              *pspec);
 
-static void     gcolor3_color_selection_realize     (GtkWidget          *widget);
-static void     gcolor3_color_selection_unrealize   (GtkWidget          *widget);
-static void     gcolor3_color_selection_show_all    (GtkWidget          *widget);
+static void     colpicker_color_selection_realize     (GtkWidget          *widget);
+static void     colpicker_color_selection_unrealize   (GtkWidget          *widget);
+static void     colpicker_color_selection_show_all    (GtkWidget          *widget);
 
-static void     gcolor3_color_selection_set_palette_color   (Gcolor3ColorSelection *colorsel,
+static void     colpicker_color_selection_set_palette_color   (ColPickerColorSelection *colorsel,
                                                              gint                   index,
                                                              GdkRGBA               *color);
 static void     set_focus_line_attributes                   (GtkWidget             *drawing_area,
@@ -190,7 +190,7 @@ static void     default_change_palette_func                 (GdkScreen          
 static void     make_control_relations                      (AtkObject             *atk_obj,
                                                              GtkWidget             *widget);
 static void     make_all_relations                          (AtkObject             *atk_obj,
-                                                             Gcolor3ColorSelectionPrivate *priv);
+                                                             ColPickerColorSelectionPrivate *priv);
 
 static void     hsv_changed                                 (GtkWidget             *hsv,
                                                              gpointer               data);
@@ -207,8 +207,8 @@ static void     hex_changed                                 (GtkWidget          
 static gboolean hex_focus_out                               (GtkWidget             *hex_entry,
                                                              GdkEventFocus         *event,
                                                              gpointer               data);
-static void     color_sample_new                            (Gcolor3ColorSelection *colorsel);
-static void     make_label_spinbutton                       (Gcolor3ColorSelection *colorsel,
+static void     color_sample_new                            (ColPickerColorSelection *colorsel);
+static void     make_label_spinbutton                       (ColPickerColorSelection *colorsel,
                                                              GtkWidget            **spinbutton,
                                                              gchar                 *text,
                                                              GtkWidget             *table,
@@ -216,11 +216,11 @@ static void     make_label_spinbutton                       (Gcolor3ColorSelecti
                                                              gint                   j,
                                                              gint                   channel_type,
                                                              const gchar           *tooltip);
-static void     make_palette_frame                          (Gcolor3ColorSelection *colorsel,
+static void     make_palette_frame                          (ColPickerColorSelection *colorsel,
                                                              GtkWidget             *table,
                                                              gint                   i,
                                                              gint                   j);
-static void     set_selected_palette                        (Gcolor3ColorSelection *colorsel,
+static void     set_selected_palette                        (ColPickerColorSelection *colorsel,
                                                              int                    x,
                                                              int                    y);
 static void     set_focus_line_attributes                   (GtkWidget             *drawing_area,
@@ -232,31 +232,31 @@ static gboolean mouse_press                                 (GtkWidget          
 static void  palette_change_notify_instance                 (GObject    *object,
                                                              GParamSpec *pspec,
                                                              gpointer    data);
-static void update_palette                                  (Gcolor3ColorSelection *colorsel);
+static void update_palette                                  (ColPickerColorSelection *colorsel);
 
 static guint color_selection_signals[LAST_SIGNAL] = { 0 };
 
-static Gcolor3ColorSelectionChangePaletteFunc noscreen_change_palette_hook = default_noscreen_change_palette_func;
-static Gcolor3ColorSelectionChangePaletteWithScreenFunc change_palette_hook = default_change_palette_func;
+static ColPickerColorSelectionChangePaletteFunc noscreen_change_palette_hook = default_noscreen_change_palette_func;
+static ColPickerColorSelectionChangePaletteWithScreenFunc change_palette_hook = default_change_palette_func;
 
-G_DEFINE_TYPE_WITH_PRIVATE (Gcolor3ColorSelection, gcolor3_color_selection, GTK_TYPE_BOX)
+G_DEFINE_TYPE_WITH_PRIVATE (ColPickerColorSelection, colpicker_color_selection, GTK_TYPE_BOX)
 
 static void
-gcolor3_color_selection_class_init (Gcolor3ColorSelectionClass *klass)
+colpicker_color_selection_class_init (ColPickerColorSelectionClass *klass)
 {
   GObjectClass *gobject_class;
   GtkWidgetClass *widget_class;
 
   gobject_class = G_OBJECT_CLASS (klass);
-  gobject_class->finalize = gcolor3_color_selection_finalize;
-  gobject_class->set_property = gcolor3_color_selection_set_property;
-  gobject_class->get_property = gcolor3_color_selection_get_property;
+  gobject_class->finalize = colpicker_color_selection_finalize;
+  gobject_class->set_property = colpicker_color_selection_set_property;
+  gobject_class->get_property = colpicker_color_selection_get_property;
 
   widget_class = GTK_WIDGET_CLASS (klass);
-  widget_class->destroy = gcolor3_color_selection_destroy;
-  widget_class->realize = gcolor3_color_selection_realize;
-  widget_class->unrealize = gcolor3_color_selection_unrealize;
-  widget_class->show_all = gcolor3_color_selection_show_all;
+  widget_class->destroy = colpicker_color_selection_destroy;
+  widget_class->realize = colpicker_color_selection_realize;
+  widget_class->unrealize = colpicker_color_selection_unrealize;
+  widget_class->show_all = colpicker_color_selection_show_all;
 
   g_object_class_install_property (gobject_class,
                                    PROP_HAS_OPACITY_CONTROL,
@@ -291,7 +291,7 @@ gcolor3_color_selection_class_init (Gcolor3ColorSelectionClass *klass)
                                                       G_PARAM_STATIC_BLURB));
 
   /**
-   * Gcolor3ColorSelection:current-rgba:
+   * ColPickerColorSelection:current-rgba:
    *
    * The current RGBA color.
    *
@@ -309,24 +309,24 @@ gcolor3_color_selection_class_init (Gcolor3ColorSelectionClass *klass)
                                                        G_PARAM_STATIC_BLURB));
 
   /**
-   * Gcolor3ColorSelection::color-changed:
+   * ColPickerColorSelection::color-changed:
    * @colorselection: the object which received the signal.
    *
-   * This signal is emitted when the color changes in the #Gcolor3ColorSelection
+   * This signal is emitted when the color changes in the #ColPickerColorSelection
    * according to its update policy.
    */
   color_selection_signals[COLOR_CHANGED] =
     g_signal_new (I_("color-changed"),
                   G_OBJECT_CLASS_TYPE (gobject_class),
                   G_SIGNAL_RUN_FIRST,
-                  G_STRUCT_OFFSET (Gcolor3ColorSelectionClass, color_changed),
+                  G_STRUCT_OFFSET (ColPickerColorSelectionClass, color_changed),
                   NULL, NULL,
                   NULL,
                   G_TYPE_NONE, 0);
 }
 
 static void
-gcolor3_color_selection_init (Gcolor3ColorSelection *colorsel)
+colpicker_color_selection_init (ColPickerColorSelection *colorsel)
 {
   GtkWidget *top_hbox;
   GtkWidget *top_right_vbox;
@@ -334,14 +334,14 @@ gcolor3_color_selection_init (Gcolor3ColorSelection *colorsel)
   GtkAdjustment *adjust;
   GtkWidget *picker_image;
   gint i, j;
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
   AtkObject *atk_obj;
   GList *focus_chain = NULL;
 
   gtk_orientable_set_orientation (GTK_ORIENTABLE (colorsel),
                                   GTK_ORIENTATION_VERTICAL);
 
-  priv = colorsel->private_data = gcolor3_color_selection_get_instance_private (colorsel);
+  priv = colorsel->private_data = colpicker_color_selection_get_instance_private (colorsel);
   priv->changing = FALSE;
   priv->default_set = FALSE;
   priv->default_alpha_set = FALSE;
@@ -351,10 +351,10 @@ gcolor3_color_selection_init (Gcolor3ColorSelection *colorsel)
   gtk_box_pack_start (GTK_BOX (colorsel), top_hbox, FALSE, FALSE, 0);
 
   vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 6);
-  priv->triangle_colorsel = gcolor3_hsv_new ();
+  priv->triangle_colorsel = colpicker_hsv_new ();
   g_signal_connect (priv->triangle_colorsel, "changed",
                     G_CALLBACK (hsv_changed), colorsel);
-  gcolor3_hsv_set_metrics (GCOLOR3_HSV (priv->triangle_colorsel), 174, 15);
+  colpicker_hsv_set_metrics (COLPICKER_HSV (priv->triangle_colorsel), 174, 15);
   gtk_box_pack_start (GTK_BOX (top_hbox), vbox, FALSE, FALSE, 0);
   gtk_box_pack_start (GTK_BOX (vbox), priv->triangle_colorsel, FALSE, FALSE, 0);
   gtk_widget_set_tooltip_text (priv->triangle_colorsel,
@@ -519,34 +519,34 @@ gcolor3_color_selection_init (Gcolor3ColorSelection *colorsel)
 
 /* GObject methods */
 static void
-gcolor3_color_selection_finalize (GObject *object)
+colpicker_color_selection_finalize (GObject *object)
 {
-  G_OBJECT_CLASS (gcolor3_color_selection_parent_class)->finalize (object);
+  G_OBJECT_CLASS (colpicker_color_selection_parent_class)->finalize (object);
 }
 
 static void
-gcolor3_color_selection_set_property (GObject         *object,
+colpicker_color_selection_set_property (GObject         *object,
                                       guint            prop_id,
                                       const GValue    *value,
                                       GParamSpec      *pspec)
 {
-  Gcolor3ColorSelection *colorsel = GCOLOR3_COLOR_SELECTION (object);
+  ColPickerColorSelection *colorsel = COLPICKER_COLOR_SELECTION (object);
 
   switch (prop_id)
     {
     case PROP_HAS_OPACITY_CONTROL:
-      gcolor3_color_selection_set_has_opacity_control (colorsel,
+      colpicker_color_selection_set_has_opacity_control (colorsel,
                                                        g_value_get_boolean (value));
       break;
     case PROP_HAS_PALETTE:
-      gcolor3_color_selection_set_has_palette (colorsel,
+      colpicker_color_selection_set_has_palette (colorsel,
                                                g_value_get_boolean (value));
       break;
     case PROP_CURRENT_ALPHA:
-      gcolor3_color_selection_set_current_alpha (colorsel, g_value_get_uint (value));
+      colpicker_color_selection_set_current_alpha (colorsel, g_value_get_uint (value));
       break;
     case PROP_CURRENT_RGBA:
-      gcolor3_color_selection_set_current_rgba (colorsel, g_value_get_boxed (value));
+      colpicker_color_selection_set_current_rgba (colorsel, g_value_get_boxed (value));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -556,29 +556,29 @@ gcolor3_color_selection_set_property (GObject         *object,
 }
 
 static void
-gcolor3_color_selection_get_property (GObject     *object,
+colpicker_color_selection_get_property (GObject     *object,
                                       guint        prop_id,
                                       GValue      *value,
                                       GParamSpec  *pspec)
 {
-  Gcolor3ColorSelection *colorsel = GCOLOR3_COLOR_SELECTION (object);
+  ColPickerColorSelection *colorsel = COLPICKER_COLOR_SELECTION (object);
 
   switch (prop_id)
     {
     case PROP_HAS_OPACITY_CONTROL:
-      g_value_set_boolean (value, gcolor3_color_selection_get_has_opacity_control (colorsel));
+      g_value_set_boolean (value, colpicker_color_selection_get_has_opacity_control (colorsel));
       break;
     case PROP_HAS_PALETTE:
-      g_value_set_boolean (value, gcolor3_color_selection_get_has_palette (colorsel));
+      g_value_set_boolean (value, colpicker_color_selection_get_has_palette (colorsel));
       break;
     case PROP_CURRENT_ALPHA:
-      g_value_set_uint (value, gcolor3_color_selection_get_current_alpha (colorsel));
+      g_value_set_uint (value, colpicker_color_selection_get_current_alpha (colorsel));
       break;
     case PROP_CURRENT_RGBA:
       {
         GdkRGBA rgba;
 
-        gcolor3_color_selection_get_current_rgba (colorsel, &rgba);
+        colpicker_color_selection_get_current_rgba (colorsel, &rgba);
         g_value_set_boxed (value, &rgba);
       }
       break;
@@ -591,21 +591,21 @@ gcolor3_color_selection_get_property (GObject     *object,
 /* GtkWidget methods */
 
 static void
-gcolor3_color_selection_destroy (GtkWidget *widget)
+colpicker_color_selection_destroy (GtkWidget *widget)
 {
-  Gcolor3ColorSelection *colorsel = GCOLOR3_COLOR_SELECTION (widget);
-  Gcolor3ColorSelectionPrivate *priv = colorsel->private_data;
+  ColPickerColorSelection *colorsel = COLPICKER_COLOR_SELECTION (widget);
+  ColPickerColorSelectionPrivate *priv = colorsel->private_data;
 
   g_cancellable_cancel (priv->cancellable);
 
-  GTK_WIDGET_CLASS (gcolor3_color_selection_parent_class)->destroy (widget);
+  GTK_WIDGET_CLASS (colpicker_color_selection_parent_class)->destroy (widget);
 }
 
 static void
-gcolor3_color_selection_realize (GtkWidget *widget)
+colpicker_color_selection_realize (GtkWidget *widget)
 {
-  Gcolor3ColorSelection *colorsel = GCOLOR3_COLOR_SELECTION (widget);
-  Gcolor3ColorSelectionPrivate *priv = colorsel->private_data;
+  ColPickerColorSelection *colorsel = COLPICKER_COLOR_SELECTION (widget);
+  ColPickerColorSelectionPrivate *priv = colorsel->private_data;
   GtkSettings *settings = gtk_widget_get_settings (widget);
 
   priv->settings_connection =  g_signal_connect (settings,
@@ -614,19 +614,19 @@ gcolor3_color_selection_realize (GtkWidget *widget)
                                                  widget);
   update_palette (colorsel);
 
-  GTK_WIDGET_CLASS (gcolor3_color_selection_parent_class)->realize (widget);
+  GTK_WIDGET_CLASS (colpicker_color_selection_parent_class)->realize (widget);
 }
 
 static void
-gcolor3_color_selection_unrealize (GtkWidget *widget)
+colpicker_color_selection_unrealize (GtkWidget *widget)
 {
-  Gcolor3ColorSelection *colorsel = GCOLOR3_COLOR_SELECTION (widget);
-  Gcolor3ColorSelectionPrivate *priv = colorsel->private_data;
+  ColPickerColorSelection *colorsel = COLPICKER_COLOR_SELECTION (widget);
+  ColPickerColorSelectionPrivate *priv = colorsel->private_data;
   GtkSettings *settings = gtk_widget_get_settings (widget);
 
   g_signal_handler_disconnect (settings, priv->settings_connection);
 
-  GTK_WIDGET_CLASS (gcolor3_color_selection_parent_class)->unrealize (widget);
+  GTK_WIDGET_CLASS (colpicker_color_selection_parent_class)->unrealize (widget);
 }
 
 /* We override show-all since we have internal widgets that
@@ -634,7 +634,7 @@ gcolor3_color_selection_unrealize (GtkWidget *widget)
  * palette and opacity sliders.
  */
 static void
-gcolor3_color_selection_show_all (GtkWidget *widget)
+colpicker_color_selection_show_all (GtkWidget *widget)
 {
   gtk_widget_show (widget);
 }
@@ -645,16 +645,16 @@ gcolor3_color_selection_show_all (GtkWidget *widget)
  *
  */
 
-static void color_sample_draw_sample (Gcolor3ColorSelection *colorsel,
+static void color_sample_draw_sample (ColPickerColorSelection *colorsel,
                                       int                    which,
                                       cairo_t *              cr);
-static void color_sample_update_samples (Gcolor3ColorSelection *colorsel);
+static void color_sample_update_samples (ColPickerColorSelection *colorsel);
 
 static void
-set_color_internal (Gcolor3ColorSelection *colorsel,
+set_color_internal (ColPickerColorSelection *colorsel,
                     gdouble               *color)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
   gint i;
 
   priv = colorsel->private_data;
@@ -704,8 +704,8 @@ color_sample_drag_begin (GtkWidget      *widget,
                          GdkDragContext *context,
                          gpointer        data)
 {
-  Gcolor3ColorSelection *colorsel = data;
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelection *colorsel = data;
+  ColPickerColorSelectionPrivate *priv;
   gdouble *colsrc;
 
   priv = colorsel->private_data;
@@ -736,8 +736,8 @@ color_sample_drop_handle (GtkWidget             *widget,
                           UNUSED guint           time,
                           gpointer               data)
 {
-  Gcolor3ColorSelection *colorsel = data;
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelection *colorsel = data;
+  ColPickerColorSelectionPrivate *priv;
   gint length;
   guint16 *vals;
   gdouble color[4];
@@ -785,8 +785,8 @@ color_sample_drag_handle (GtkWidget             *widget,
                           UNUSED guint           time,
                           gpointer               data)
 {
-  Gcolor3ColorSelection *colorsel = data;
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelection *colorsel = data;
+  ColPickerColorSelectionPrivate *priv;
   guint16 vals[4];
   gdouble *colsrc;
 
@@ -809,13 +809,13 @@ color_sample_drag_handle (GtkWidget             *widget,
 
 /* which = 0 means draw old sample, which = 1 means draw new */
 static void
-color_sample_draw_sample (Gcolor3ColorSelection *colorsel,
+color_sample_draw_sample (ColPickerColorSelection *colorsel,
                           int                    which,
                           cairo_t               *cr)
 {
   GtkWidget *da;
   gint x, y, goff;
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
   int width, height;
 
   g_return_if_fail (colorsel != NULL);
@@ -884,9 +884,9 @@ color_sample_draw_sample (Gcolor3ColorSelection *colorsel,
 
 
 static void
-color_sample_update_samples (Gcolor3ColorSelection *colorsel)
+color_sample_update_samples (ColPickerColorSelection *colorsel)
 {
-  Gcolor3ColorSelectionPrivate *priv = colorsel->private_data;
+  ColPickerColorSelectionPrivate *priv = colorsel->private_data;
   gtk_widget_queue_draw (priv->old_sample);
   gtk_widget_queue_draw (priv->cur_sample);
 }
@@ -894,7 +894,7 @@ color_sample_update_samples (Gcolor3ColorSelection *colorsel)
 static gboolean
 color_old_sample_draw (UNUSED GtkWidget      *da,
                        cairo_t               *cr,
-                       Gcolor3ColorSelection *colorsel)
+                       ColPickerColorSelection *colorsel)
 {
   color_sample_draw_sample (colorsel, 0, cr);
   return FALSE;
@@ -904,19 +904,19 @@ color_old_sample_draw (UNUSED GtkWidget      *da,
 static gboolean
 color_cur_sample_draw (UNUSED GtkWidget      *da,
                        cairo_t               *cr,
-                       Gcolor3ColorSelection *colorsel)
+                       ColPickerColorSelection *colorsel)
 {
   color_sample_draw_sample (colorsel, 1, cr);
   return FALSE;
 }
 
 static void
-color_sample_setup_dnd (Gcolor3ColorSelection *colorsel, GtkWidget *sample)
+color_sample_setup_dnd (ColPickerColorSelection *colorsel, GtkWidget *sample)
 {
   static const GtkTargetEntry targets[] = {
     { "application/x-color", 0 }
   };
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
   priv = colorsel->private_data;
 
   gtk_drag_source_set (sample,
@@ -952,9 +952,9 @@ color_sample_setup_dnd (Gcolor3ColorSelection *colorsel, GtkWidget *sample)
 }
 
 static void
-update_tooltips (Gcolor3ColorSelection *colorsel)
+update_tooltips (ColPickerColorSelection *colorsel)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
 
   priv = colorsel->private_data;
 
@@ -982,9 +982,9 @@ update_tooltips (Gcolor3ColorSelection *colorsel)
 }
 
 static void
-color_sample_new (Gcolor3ColorSelection *colorsel)
+color_sample_new (ColPickerColorSelection *colorsel)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
 
   priv = colorsel->private_data;
 
@@ -1044,8 +1044,8 @@ palette_draw (GtkWidget *drawing_area,
               cairo_t   *cr,
               gpointer   data)
 {
-  Gcolor3ColorSelection *self = GCOLOR3_COLOR_SELECTION (data);
-  Gcolor3ColorSelectionPrivate *priv = gcolor3_color_selection_get_instance_private (self);
+  ColPickerColorSelection *self = COLPICKER_COLOR_SELECTION (data);
+  ColPickerColorSelectionPrivate *priv = colpicker_color_selection_get_instance_private (self);
   gint focus_width;
 
   gdk_cairo_set_source_rgba (cr, &priv->palette_color);
@@ -1160,7 +1160,7 @@ palette_drag_end (GtkWidget             *widget,
 }
 
 static GdkRGBA *
-get_current_colors (Gcolor3ColorSelection *colorsel)
+get_current_colors (ColPickerColorSelection *colorsel)
 {
   GtkSettings *settings;
   GdkRGBA *colors = NULL;
@@ -1170,9 +1170,9 @@ get_current_colors (Gcolor3ColorSelection *colorsel)
   settings = gtk_widget_get_settings (GTK_WIDGET (colorsel));
   g_object_get (settings, "gtk-color-palette", &palette, NULL);
 
-  if (!gcolor3_color_selection_palette_from_string (palette, &colors, &n_colors))
+  if (!colpicker_color_selection_palette_from_string (palette, &colors, &n_colors))
     {
-      gcolor3_color_selection_palette_from_string (DEFAULT_COLOR_PALETTE,
+      colpicker_color_selection_palette_from_string (DEFAULT_COLOR_PALETTE,
                                                &colors,
                                                &n_colors);
     }
@@ -1186,7 +1186,7 @@ get_current_colors (Gcolor3ColorSelection *colorsel)
           GdkRGBA *tmp_colors = colors;
           gint tmp_n_colors = n_colors;
 
-          gcolor3_color_selection_palette_from_string (DEFAULT_COLOR_PALETTE,
+          colpicker_color_selection_palette_from_string (DEFAULT_COLOR_PALETTE,
                                                        &colors,
                                                        &n_colors);
           memcpy (colors, tmp_colors, sizeof (GdkRGBA) * tmp_n_colors);
@@ -1205,16 +1205,16 @@ get_current_colors (Gcolor3ColorSelection *colorsel)
 /* Changes the model color */
 static void
 palette_change_color (GtkWidget             *drawing_area,
-                      Gcolor3ColorSelection *colorsel,
+                      ColPickerColorSelection *colorsel,
                       gdouble               *color)
 {
   gint x, y;
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
   GdkRGBA gdk_color;
   GdkRGBA *current_colors;
   GdkScreen *screen;
 
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
+  g_return_if_fail (COLPICKER_IS_COLOR_SELECTION (colorsel));
   g_return_if_fail (GTK_IS_DRAWING_AREA (drawing_area));
 
   priv = colorsel->private_data;
@@ -1253,7 +1253,7 @@ palette_change_color (GtkWidget             *drawing_area,
   else if (noscreen_change_palette_hook != default_noscreen_change_palette_func)
     {
       if (screen != gdk_screen_get_default ())
-        g_warning ("gcolor3_color_selection_set_change_palette_hook used by "
+        g_warning ("colpicker_color_selection_set_change_palette_hook used by "
                    "widget is not on the default screen.");
       (* noscreen_change_palette_hook) (current_colors,
                                         CUSTOM_PALETTE_WIDTH * CUSTOM_PALETTE_HEIGHT);
@@ -1268,10 +1268,10 @@ palette_change_color (GtkWidget             *drawing_area,
 /* Changes the view color */
 static void
 palette_set_color (GtkWidget             *drawing_area,
-                   Gcolor3ColorSelection *colorsel,
+                   ColPickerColorSelection *colorsel,
                    gdouble               *color)
 {
-  Gcolor3ColorSelectionPrivate *priv = gcolor3_color_selection_get_instance_private (colorsel);
+  ColPickerColorSelectionPrivate *priv = colpicker_color_selection_get_instance_private (colorsel);
   gdouble *new_color = g_new (double, 4);
   GdkRGBA rgba;
 
@@ -1316,13 +1316,13 @@ static void
 save_color_selected (UNUSED GtkWidget *menuitem,
                      gpointer          data)
 {
-  Gcolor3ColorSelection *colorsel;
+  ColPickerColorSelection *colorsel;
   GtkWidget *drawing_area;
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
 
   drawing_area = GTK_WIDGET (data);
 
-  colorsel = GCOLOR3_COLOR_SELECTION (g_object_get_data (G_OBJECT (drawing_area),
+  colorsel = COLPICKER_COLOR_SELECTION (g_object_get_data (G_OBJECT (drawing_area),
                                       "gtk-color-sel"));
 
   priv = colorsel->private_data;
@@ -1331,7 +1331,7 @@ save_color_selected (UNUSED GtkWidget *menuitem,
 }
 
 static void
-do_popup (Gcolor3ColorSelection *colorsel,
+do_popup (ColPickerColorSelection *colorsel,
           GtkWidget             *drawing_area,
           const GdkEvent        *trigger_event)
 {
@@ -1395,7 +1395,7 @@ palette_press (GtkWidget      *drawing_area,
                GdkEventButton *event,
                gpointer        data)
 {
-  Gcolor3ColorSelection *colorsel = GCOLOR3_COLOR_SELECTION (data);
+  ColPickerColorSelection *colorsel = COLPICKER_COLOR_SELECTION (data);
 
   gtk_widget_grab_focus (drawing_area);
 
@@ -1413,7 +1413,7 @@ palette_release (GtkWidget      *drawing_area,
                  GdkEventButton *event,
                  gpointer        data)
 {
-  Gcolor3ColorSelection *colorsel = GCOLOR3_COLOR_SELECTION (data);
+  ColPickerColorSelection *colorsel = COLPICKER_COLOR_SELECTION (data);
 
   gtk_widget_grab_focus (drawing_area);
 
@@ -1442,7 +1442,7 @@ palette_drop_handle (GtkWidget             *widget,
                      UNUSED guint           time,
                      gpointer               data)
 {
-  Gcolor3ColorSelection *colorsel = GCOLOR3_COLOR_SELECTION (data);
+  ColPickerColorSelection *colorsel = COLPICKER_COLOR_SELECTION (data);
   gint length;
   guint16 *vals;
   gdouble color[4];
@@ -1487,7 +1487,7 @@ palette_activate (GtkWidget   *widget,
         {
           gdouble color[4];
           palette_get_color (widget, color);
-          set_color_internal (GCOLOR3_COLOR_SELECTION (data), color);
+          set_color_internal (COLPICKER_COLOR_SELECTION (data), color);
         }
       return TRUE;
     }
@@ -1505,7 +1505,7 @@ palette_popup (GtkWidget *widget,
 
 
 static GtkWidget*
-palette_new (Gcolor3ColorSelection *colorsel)
+palette_new (ColPickerColorSelection *colorsel)
 {
   GtkWidget *retval;
 
@@ -1558,7 +1558,7 @@ palette_new (Gcolor3ColorSelection *colorsel)
 }
 
 
-/* The actual Gcolor3ColorSelection widget */
+/* The actual ColPickerColorSelection widget */
 
 static void
 grab_color_at_pointer (GdkScreen *screen,
@@ -1569,8 +1569,8 @@ grab_color_at_pointer (GdkScreen *screen,
 {
   GdkPixbuf *pixbuf;
   guchar *pixels;
-  Gcolor3ColorSelection *colorsel = data;
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelection *colorsel = data;
+  ColPickerColorSelectionPrivate *priv;
   GdkWindow *root_window = gdk_screen_get_root_window (screen);
 
   priv = colorsel->private_data;
@@ -1621,7 +1621,7 @@ mouse_release (GtkWidget      *invisible,
                GdkEventButton *event,
                gpointer        data)
 {
-  /* Gcolor3ColorSelection *colorsel = data; */
+  /* ColPickerColorSelection *colorsel = data; */
 
   if (event->button != GDK_BUTTON_PRIMARY)
     return FALSE;
@@ -1737,8 +1737,8 @@ mouse_press (GtkWidget      *invisible,
 static void
 get_screen_color (GtkWidget *button)
 {
-  Gcolor3ColorSelection *colorsel = g_object_get_data (G_OBJECT (button), "COLORSEL");
-  Gcolor3ColorSelectionPrivate *priv = colorsel->private_data;
+  ColPickerColorSelection *colorsel = g_object_get_data (G_OBJECT (button), "COLORSEL");
+  ColPickerColorSelectionPrivate *priv = colorsel->private_data;
   XdpPortal *portal;
   XdpParent *parent;
   GtkWindow *window;
@@ -1760,13 +1760,13 @@ pick_color_cb (GObject      *source_object,
                GAsyncResult *result,
                gpointer      user_data)
 {
-  Gcolor3ColorSelection *colorsel;
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelection *colorsel;
+  ColPickerColorSelectionPrivate *priv;
   GdkRGBA color;
   GVariant *variant;
   GError *error = NULL;
 
-  colorsel = GCOLOR3_COLOR_SELECTION (user_data);
+  colorsel = COLPICKER_COLOR_SELECTION (user_data);
   priv = colorsel->private_data;
 
   variant = xdp_portal_pick_color_finish (XDP_PORTAL (source_object), result, &error);
@@ -1796,12 +1796,12 @@ static void
 hex_changed (GtkWidget *hex_entry,
              gpointer   data)
 {
-  Gcolor3ColorSelection *colorsel;
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelection *colorsel;
+  ColPickerColorSelectionPrivate *priv;
   GdkRGBA color;
   gchar *text;
 
-  colorsel = GCOLOR3_COLOR_SELECTION (data);
+  colorsel = COLPICKER_COLOR_SELECTION (data);
   priv = colorsel->private_data;
 
   if (priv->changing)
@@ -1843,16 +1843,16 @@ static void
 hsv_changed (GtkWidget *hsv,
              gpointer   data)
 {
-  Gcolor3ColorSelection *colorsel;
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelection *colorsel;
+  ColPickerColorSelectionPrivate *priv;
 
-  colorsel = GCOLOR3_COLOR_SELECTION (data);
+  colorsel = COLPICKER_COLOR_SELECTION (data);
   priv = colorsel->private_data;
 
   if (priv->changing)
     return;
 
-  gcolor3_hsv_get_color (GCOLOR3_HSV (hsv),
+  colpicker_hsv_get_color (COLPICKER_HSV (hsv),
                          &priv->color[COLORSEL_HUE],
                          &priv->color[COLORSEL_SATURATION],
                          &priv->color[COLORSEL_VALUE]);
@@ -1869,10 +1869,10 @@ static void
 adjustment_changed (GtkAdjustment *adjustment,
                     gpointer       data)
 {
-  Gcolor3ColorSelection *colorsel;
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelection *colorsel;
+  ColPickerColorSelectionPrivate *priv;
 
-  colorsel = GCOLOR3_COLOR_SELECTION (g_object_get_data (G_OBJECT (adjustment), "COLORSEL"));
+  colorsel = COLPICKER_COLOR_SELECTION (g_object_get_data (G_OBJECT (adjustment), "COLORSEL"));
   priv = colorsel->private_data;
 
   if (priv->changing)
@@ -1922,12 +1922,12 @@ static void
 opacity_entry_changed (UNUSED GtkWidget *opacity_entry,
                        gpointer          data)
 {
-  Gcolor3ColorSelection *colorsel;
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelection *colorsel;
+  ColPickerColorSelectionPrivate *priv;
   GtkAdjustment *adj;
   gchar *text;
 
-  colorsel = GCOLOR3_COLOR_SELECTION (data);
+  colorsel = COLPICKER_COLOR_SELECTION (data);
   priv = colorsel->private_data;
 
   if (priv->changing)
@@ -1943,7 +1943,7 @@ opacity_entry_changed (UNUSED GtkWidget *opacity_entry,
 }
 
 static void
-make_label_spinbutton (Gcolor3ColorSelection *colorsel,
+make_label_spinbutton (ColPickerColorSelection *colorsel,
                        GtkWidget            **spinbutton,
                        gchar                 *text,
                        GtkWidget             *table,
@@ -1986,13 +1986,13 @@ make_label_spinbutton (Gcolor3ColorSelection *colorsel,
 }
 
 static void
-make_palette_frame (Gcolor3ColorSelection *colorsel,
+make_palette_frame (ColPickerColorSelection *colorsel,
                     GtkWidget             *table,
                     gint                   i,
                     gint                   j)
 {
   GtkWidget *frame;
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
 
   priv = colorsel->private_data;
   frame = gtk_frame_new (NULL);
@@ -2005,17 +2005,17 @@ make_palette_frame (Gcolor3ColorSelection *colorsel,
 
 /* Set the palette entry [x][y] to be the currently selected one. */
 static void
-set_selected_palette (Gcolor3ColorSelection *colorsel, int x, int y)
+set_selected_palette (ColPickerColorSelection *colorsel, int x, int y)
 {
-  Gcolor3ColorSelectionPrivate *priv = colorsel->private_data;
+  ColPickerColorSelectionPrivate *priv = colorsel->private_data;
 
   gtk_widget_grab_focus (priv->custom_palette[x][y]);
 }
 
 static void
-update_color (Gcolor3ColorSelection *colorsel)
+update_color (ColPickerColorSelection *colorsel)
 {
-  Gcolor3ColorSelectionPrivate *priv = colorsel->private_data;
+  ColPickerColorSelectionPrivate *priv = colorsel->private_data;
   gchar entryval[12];
   gchar opacity_text[32];
   gchar *ptr;
@@ -2023,7 +2023,7 @@ update_color (Gcolor3ColorSelection *colorsel)
   priv->changing = TRUE;
   color_sample_update_samples (colorsel);
 
-  gcolor3_hsv_set_color (GCOLOR3_HSV (priv->triangle_colorsel),
+  colpicker_hsv_set_color (COLPICKER_HSV (priv->triangle_colorsel),
                          priv->color[COLORSEL_HUE],
                          priv->color[COLORSEL_SATURATION],
                          priv->color[COLORSEL_VALUE]);
@@ -2076,7 +2076,7 @@ update_color (Gcolor3ColorSelection *colorsel)
 }
 
 static void
-update_palette (Gcolor3ColorSelection *colorsel)
+update_palette (ColPickerColorSelection *colorsel)
 {
   GdkRGBA *current_colors;
   gint i, j;
@@ -2091,7 +2091,7 @@ update_palette (Gcolor3ColorSelection *colorsel)
 
           index = i * CUSTOM_PALETTE_WIDTH + j;
 
-          gcolor3_color_selection_set_palette_color (colorsel,
+          colpicker_color_selection_set_palette_color (colorsel,
                                                  index,
                                                  &current_colors[index]);
         }
@@ -2105,7 +2105,7 @@ palette_change_notify_instance (UNUSED GObject    *object,
                                 UNUSED GParamSpec *pspec,
                                 gpointer           data)
 {
-  update_palette (GCOLOR3_COLOR_SELECTION (data));
+  update_palette (COLPICKER_COLOR_SELECTION (data));
 }
 
 static void
@@ -2125,7 +2125,7 @@ default_change_palette_func (GdkScreen     *screen,
 
   g_value_init (&value, G_TYPE_STRING);
 
-  str = gcolor3_color_selection_palette_to_string (colors, n_colors);
+  str = colpicker_color_selection_palette_to_string (colors, n_colors);
   g_value_set_string (&value, str);
 
   g_object_set_property (G_OBJECT (gtk_settings_get_for_screen (screen)),
@@ -2136,27 +2136,27 @@ default_change_palette_func (GdkScreen     *screen,
 }
 
 /**
- * gcolor3_color_selection_new:
+ * colpicker_color_selection_new:
  *
- * Creates a new Gcolor3ColorSelection.
+ * Creates a new ColPickerColorSelection.
  *
- * Returns: a new #Gcolor3ColorSelection
+ * Returns: a new #ColPickerColorSelection
  */
 GtkWidget *
-gcolor3_color_selection_new (void)
+colpicker_color_selection_new (void)
 {
-  Gcolor3ColorSelection *colorsel;
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelection *colorsel;
+  ColPickerColorSelectionPrivate *priv;
   gdouble color[4];
   color[0] = 1.0;
   color[1] = 1.0;
   color[2] = 1.0;
   color[3] = 1.0;
 
-  colorsel = g_object_new (GCOLOR3_TYPE_COLOR_SELECTION, NULL);
+  colorsel = g_object_new (COLPICKER_TYPE_COLOR_SELECTION, NULL);
   priv = colorsel->private_data;
   set_color_internal (colorsel, color);
-  gcolor3_color_selection_set_has_opacity_control (colorsel, TRUE);
+  colpicker_color_selection_set_has_opacity_control (colorsel, TRUE);
 
   /* We want to make sure that default_set is FALSE.
    * This way the user can still set it.
@@ -2168,8 +2168,8 @@ gcolor3_color_selection_new (void)
 }
 
 /**
- * gcolor3_color_selection_get_has_opacity_control:
- * @colorsel: a #Gcolor3ColorSelection
+ * colpicker_color_selection_get_has_opacity_control:
+ * @colorsel: a #ColPickerColorSelection
  *
  * Determines whether the colorsel has an opacity control.
  *
@@ -2177,11 +2177,11 @@ gcolor3_color_selection_new (void)
  *     %FALSE if it does't
  */
 gboolean
-gcolor3_color_selection_get_has_opacity_control (Gcolor3ColorSelection *colorsel)
+colpicker_color_selection_get_has_opacity_control (ColPickerColorSelection *colorsel)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
 
-  g_return_val_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel), FALSE);
+  g_return_val_if_fail (COLPICKER_IS_COLOR_SELECTION (colorsel), FALSE);
 
   priv = colorsel->private_data;
 
@@ -2189,19 +2189,19 @@ gcolor3_color_selection_get_has_opacity_control (Gcolor3ColorSelection *colorsel
 }
 
 /**
- * gcolor3_color_selection_set_has_opacity_control:
- * @colorsel: a #Gcolor3ColorSelection
+ * colpicker_color_selection_set_has_opacity_control:
+ * @colorsel: a #ColPickerColorSelection
  * @has_opacity: %TRUE if @colorsel can set the opacity, %FALSE otherwise
  *
  * Sets the @colorsel to use or not use opacity.
  */
 void
-gcolor3_color_selection_set_has_opacity_control (Gcolor3ColorSelection *colorsel,
+colpicker_color_selection_set_has_opacity_control (ColPickerColorSelection *colorsel,
                                                  gboolean           has_opacity)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
 
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
+  g_return_if_fail (COLPICKER_IS_COLOR_SELECTION (colorsel));
 
   priv = colorsel->private_data;
   has_opacity = has_opacity != FALSE;
@@ -2228,19 +2228,19 @@ gcolor3_color_selection_set_has_opacity_control (Gcolor3ColorSelection *colorsel
 }
 
 /**
- * gcolor3_color_selection_get_has_palette:
- * @colorsel: a #Gcolor3ColorSelection
+ * colpicker_color_selection_get_has_palette:
+ * @colorsel: a #ColPickerColorSelection
  *
  * Determines whether the color selector has a color palette.
  *
  * Returns: %TRUE if the selector has a palette, %FALSE if it hasn't
  */
 gboolean
-gcolor3_color_selection_get_has_palette (Gcolor3ColorSelection *colorsel)
+colpicker_color_selection_get_has_palette (ColPickerColorSelection *colorsel)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
 
-  g_return_val_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel), FALSE);
+  g_return_val_if_fail (COLPICKER_IS_COLOR_SELECTION (colorsel), FALSE);
 
   priv = colorsel->private_data;
 
@@ -2248,18 +2248,18 @@ gcolor3_color_selection_get_has_palette (Gcolor3ColorSelection *colorsel)
 }
 
 /**
- * gcolor3_color_selection_set_has_palette:
- * @colorsel: a #Gcolor3ColorSelection
+ * colpicker_color_selection_set_has_palette:
+ * @colorsel: a #ColPickerColorSelection
  * @has_palette: %TRUE if palette is to be visible, %FALSE otherwise
  *
  * Shows and hides the palette based upon the value of @has_palette.
  */
 void
-gcolor3_color_selection_set_has_palette (Gcolor3ColorSelection *colorsel,
+colpicker_color_selection_set_has_palette (ColPickerColorSelection *colorsel,
                                          gboolean               has_palette)
 {
-  Gcolor3ColorSelectionPrivate *priv;
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
+  ColPickerColorSelectionPrivate *priv;
+  g_return_if_fail (COLPICKER_IS_COLOR_SELECTION (colorsel));
 
   priv = colorsel->private_data;
   has_palette = has_palette != FALSE;
@@ -2279,8 +2279,8 @@ gcolor3_color_selection_set_has_palette (Gcolor3ColorSelection *colorsel,
 }
 
 /**
- * gcolor3_color_selection_set_current_color:
- * @colorsel: a #Gcolor3ColorSelection
+ * colpicker_color_selection_set_current_color:
+ * @colorsel: a #ColPickerColorSelection
  * @color: a #GdkRGBA to set the current color with
  *
  * Sets the current color to be @color.
@@ -2289,13 +2289,13 @@ gcolor3_color_selection_set_has_palette (Gcolor3ColorSelection *colorsel,
  * the original color to be @color too.
  */
 void
-gcolor3_color_selection_set_current_color (Gcolor3ColorSelection *colorsel,
+colpicker_color_selection_set_current_color (ColPickerColorSelection *colorsel,
                                            const GdkRGBA         *color)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
   gint i;
 
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
+  g_return_if_fail (COLPICKER_IS_COLOR_SELECTION (colorsel));
   g_return_if_fail (color != NULL);
 
   priv = colorsel->private_data;
@@ -2319,8 +2319,8 @@ gcolor3_color_selection_set_current_color (Gcolor3ColorSelection *colorsel,
 }
 
 /**
- * gcolor3_color_selection_set_current_alpha:
- * @colorsel: a #Gcolor3ColorSelection
+ * colpicker_color_selection_set_current_alpha:
+ * @colorsel: a #ColPickerColorSelection
  * @alpha: an integer between 0 and 65535
  *
  * Sets the current opacity to be @alpha.
@@ -2330,13 +2330,13 @@ gcolor3_color_selection_set_current_color (Gcolor3ColorSelection *colorsel,
  */
 // FIXME: this can possibly be removed, together with all special alpha treatment.
 void
-gcolor3_color_selection_set_current_alpha (Gcolor3ColorSelection *colorsel,
+colpicker_color_selection_set_current_alpha (ColPickerColorSelection *colorsel,
                                            guint16                alpha)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
   gint i;
 
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
+  g_return_if_fail (COLPICKER_IS_COLOR_SELECTION (colorsel));
 
   priv = colorsel->private_data;
   priv->changing = TRUE;
@@ -2351,19 +2351,19 @@ gcolor3_color_selection_set_current_alpha (Gcolor3ColorSelection *colorsel,
 }
 
 /**
- * gcolor3_color_selection_get_current_color:
- * @colorsel: a #Gcolor3ColorSelection
+ * colpicker_color_selection_get_current_color:
+ * @colorsel: a #ColPickerColorSelection
  * @color: (out): a #GdkRGBA to fill in with the current color
  *
- * Sets @color to be the current color in the Gcolor3ColorSelection widget.
+ * Sets @color to be the current color in the ColPickerColorSelection widget.
  */
 void
-gcolor3_color_selection_get_current_color (Gcolor3ColorSelection *colorsel,
+colpicker_color_selection_get_current_color (ColPickerColorSelection *colorsel,
                                            GdkRGBA               *color)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
 
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
+  g_return_if_fail (COLPICKER_IS_COLOR_SELECTION (colorsel));
   g_return_if_fail (color != NULL);
 
   priv = colorsel->private_data;
@@ -2373,43 +2373,43 @@ gcolor3_color_selection_get_current_color (Gcolor3ColorSelection *colorsel,
 }
 
 /**
- * gcolor3_color_selection_get_current_alpha:
- * @colorsel: a #Gcolor3ColorSelection
+ * colpicker_color_selection_get_current_alpha:
+ * @colorsel: a #ColPickerColorSelection
  *
  * Returns the current alpha value.
  *
  * Returns: an integer between 0 and 65535
  */
 guint16
-gcolor3_color_selection_get_current_alpha (Gcolor3ColorSelection *colorsel)
+colpicker_color_selection_get_current_alpha (ColPickerColorSelection *colorsel)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
 
-  g_return_val_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel), 0);
+  g_return_val_if_fail (COLPICKER_IS_COLOR_SELECTION (colorsel), 0);
 
   priv = colorsel->private_data;
   return priv->has_opacity ? UNSCALE (priv->color[COLORSEL_OPACITY]) : 65535;
 }
 
 /**
- * gcolor3_color_selection_set_previous_color:
- * @colorsel: a #Gcolor3ColorSelection
+ * colpicker_color_selection_set_previous_color:
+ * @colorsel: a #ColPickerColorSelection
  * @color: a #GdkRGBA to set the previous color with
  *
  * Sets the “previous” color to be @color.
  *
  * This function should be called with some hesitations,
  * as it might seem confusing to have that color change.
- * Calling gcolor3_color_selection_set_current_color() will also
+ * Calling colpicker_color_selection_set_current_color() will also
  * set this color the first time it is called.
  */
 void
-gcolor3_color_selection_set_previous_color (Gcolor3ColorSelection *colorsel,
+colpicker_color_selection_set_previous_color (ColPickerColorSelection *colorsel,
                                             const GdkRGBA         *color)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
 
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
+  g_return_if_fail (COLPICKER_IS_COLOR_SELECTION (colorsel));
   g_return_if_fail (color != NULL);
 
   priv = colorsel->private_data;
@@ -2429,8 +2429,8 @@ gcolor3_color_selection_set_previous_color (Gcolor3ColorSelection *colorsel,
 }
 
 /**
- * gcolor3_color_selection_set_previous_alpha:
- * @colorsel: a #Gcolor3ColorSelection
+ * colpicker_color_selection_set_previous_alpha:
+ * @colorsel: a #ColPickerColorSelection
  * @alpha: an integer between 0 and 65535
  *
  * Sets the “previous” alpha to be @alpha.
@@ -2439,12 +2439,12 @@ gcolor3_color_selection_set_previous_color (Gcolor3ColorSelection *colorsel,
  * as it might seem confusing to have that alpha change.
  */
 void
-gcolor3_color_selection_set_previous_alpha (Gcolor3ColorSelection *colorsel,
+colpicker_color_selection_set_previous_alpha (ColPickerColorSelection *colorsel,
                                             guint16                alpha)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
 
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
+  g_return_if_fail (COLPICKER_IS_COLOR_SELECTION (colorsel));
 
   priv = colorsel->private_data;
   priv->changing = TRUE;
@@ -2456,19 +2456,19 @@ gcolor3_color_selection_set_previous_alpha (Gcolor3ColorSelection *colorsel,
 
 
 /**
- * gcolor3_color_selection_get_previous_color:
- * @colorsel: a #Gcolor3ColorSelection
+ * colpicker_color_selection_get_previous_color:
+ * @colorsel: a #ColPickerColorSelection
  * @color: (out): a #GdkRGBA to fill in with the original color value
  *
  * Fills @color in with the original color value.
  */
 void
-gcolor3_color_selection_get_previous_color (Gcolor3ColorSelection *colorsel,
+colpicker_color_selection_get_previous_color (ColPickerColorSelection *colorsel,
                                             GdkRGBA               *color)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
 
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
+  g_return_if_fail (COLPICKER_IS_COLOR_SELECTION (colorsel));
   g_return_if_fail (color != NULL);
 
   priv = colorsel->private_data;
@@ -2478,27 +2478,27 @@ gcolor3_color_selection_get_previous_color (Gcolor3ColorSelection *colorsel,
 }
 
 /**
- * gcolor3_color_selection_get_previous_alpha:
- * @colorsel: a #Gcolor3ColorSelection
+ * colpicker_color_selection_get_previous_alpha:
+ * @colorsel: a #ColPickerColorSelection
  *
  * Returns the previous alpha value.
  *
  * Returns: an integer between 0 and 65535
  */
 guint16
-gcolor3_color_selection_get_previous_alpha (Gcolor3ColorSelection *colorsel)
+colpicker_color_selection_get_previous_alpha (ColPickerColorSelection *colorsel)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
 
-  g_return_val_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel), 0);
+  g_return_val_if_fail (COLPICKER_IS_COLOR_SELECTION (colorsel), 0);
 
   priv = colorsel->private_data;
   return priv->has_opacity ? UNSCALE (priv->old_color[COLORSEL_OPACITY]) : 65535;
 }
 
 /**
- * gcolor3_color_selection_set_current_rgba:
- * @colorsel: a #Gcolor3ColorSelection
+ * colpicker_color_selection_set_current_rgba:
+ * @colorsel: a #ColPickerColorSelection
  * @rgba: A #GdkRGBA to set the current color with
  *
  * Sets the current color to be @rgba.
@@ -2509,13 +2509,13 @@ gcolor3_color_selection_get_previous_alpha (Gcolor3ColorSelection *colorsel)
  * Since: 3.0
  */
 void
-gcolor3_color_selection_set_current_rgba (Gcolor3ColorSelection *colorsel,
+colpicker_color_selection_set_current_rgba (ColPickerColorSelection *colorsel,
                                           const GdkRGBA         *rgba)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
   gint i;
 
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
+  g_return_if_fail (COLPICKER_IS_COLOR_SELECTION (colorsel));
   g_return_if_fail (rgba != NULL);
 
   priv = colorsel->private_data;
@@ -2544,21 +2544,21 @@ gcolor3_color_selection_set_current_rgba (Gcolor3ColorSelection *colorsel,
 }
 
 /**
- * gcolor3_color_selection_get_current_rgba:
- * @colorsel: a #Gcolor3ColorSelection
+ * colpicker_color_selection_get_current_rgba:
+ * @colorsel: a #ColPickerColorSelection
  * @rgba: (out): a #GdkRGBA to fill in with the current color
  *
- * Sets @rgba to be the current color in the Gcolor3ColorSelection widget.
+ * Sets @rgba to be the current color in the ColPickerColorSelection widget.
  *
  * Since: 3.0
  */
 void
-gcolor3_color_selection_get_current_rgba (Gcolor3ColorSelection *colorsel,
+colpicker_color_selection_get_current_rgba (ColPickerColorSelection *colorsel,
                                           GdkRGBA               *rgba)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
 
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
+  g_return_if_fail (COLPICKER_IS_COLOR_SELECTION (colorsel));
   g_return_if_fail (rgba != NULL);
 
   priv = colorsel->private_data;
@@ -2569,26 +2569,26 @@ gcolor3_color_selection_get_current_rgba (Gcolor3ColorSelection *colorsel,
 }
 
 /**
- * gcolor3_color_selection_set_previous_rgba:
- * @colorsel: a #Gcolor3ColorSelection
+ * colpicker_color_selection_set_previous_rgba:
+ * @colorsel: a #ColPickerColorSelection
  * @rgba: a #GdkRGBA to set the previous color with
  *
  * Sets the “previous” color to be @rgba.
  *
  * This function should be called with some hesitations,
  * as it might seem confusing to have that color change.
- * Calling gcolor3_color_selection_set_current_rgba() will also
+ * Calling colpicker_color_selection_set_current_rgba() will also
  * set this color the first time it is called.
  *
  * Since: 3.0
  */
 void
-gcolor3_color_selection_set_previous_rgba (Gcolor3ColorSelection *colorsel,
+colpicker_color_selection_set_previous_rgba (ColPickerColorSelection *colorsel,
                                            const GdkRGBA         *rgba)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
 
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
+  g_return_if_fail (COLPICKER_IS_COLOR_SELECTION (colorsel));
   g_return_if_fail (rgba != NULL);
 
   priv = colorsel->private_data;
@@ -2612,8 +2612,8 @@ gcolor3_color_selection_set_previous_rgba (Gcolor3ColorSelection *colorsel,
 }
 
 /**
- * gcolor3_color_selection_get_previous_rgba:
- * @colorsel: a #Gcolor3ColorSelection
+ * colpicker_color_selection_get_previous_rgba:
+ * @colorsel: a #ColPickerColorSelection
  * @rgba: (out): a #GdkRGBA to fill in with the original color value
  *
  * Fills @rgba in with the original color value.
@@ -2621,12 +2621,12 @@ gcolor3_color_selection_set_previous_rgba (Gcolor3ColorSelection *colorsel,
  * Since: 3.0
  */
 void
-gcolor3_color_selection_get_previous_rgba (Gcolor3ColorSelection *colorsel,
+colpicker_color_selection_get_previous_rgba (ColPickerColorSelection *colorsel,
                                            GdkRGBA               *rgba)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
 
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
+  g_return_if_fail (COLPICKER_IS_COLOR_SELECTION (colorsel));
   g_return_if_fail (rgba != NULL);
 
   priv = colorsel->private_data;
@@ -2637,23 +2637,23 @@ gcolor3_color_selection_get_previous_rgba (Gcolor3ColorSelection *colorsel,
 }
 
 /**
- * gcolor3_color_selection_set_palette_color:
- * @colorsel: a #Gcolor3ColorSelection
+ * colpicker_color_selection_set_palette_color:
+ * @colorsel: a #ColPickerColorSelection
  * @index: the color index of the palette
  * @color: A #GdkRGBA to set the palette with
  *
  * Sets the palette located at @index to have @color as its color.
  */
 static void
-gcolor3_color_selection_set_palette_color (Gcolor3ColorSelection *colorsel,
+colpicker_color_selection_set_palette_color (ColPickerColorSelection *colorsel,
                                            gint                   index,
                                            GdkRGBA               *color)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
   gint x, y;
   gdouble col[3];
 
-  g_return_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel));
+  g_return_if_fail (COLPICKER_IS_COLOR_SELECTION (colorsel));
   g_return_if_fail (index >= 0  && index < CUSTOM_PALETTE_WIDTH*CUSTOM_PALETTE_HEIGHT);
 
   x = index % CUSTOM_PALETTE_WIDTH;
@@ -2668,8 +2668,8 @@ gcolor3_color_selection_set_palette_color (Gcolor3ColorSelection *colorsel,
 }
 
 /**
- * gcolor3_color_selection_is_adjusting:
- * @colorsel: a #Gcolor3ColorSelection
+ * colpicker_color_selection_is_adjusting:
+ * @colorsel: a #ColPickerColorSelection
  *
  * Gets the current state of the @colorsel.
  *
@@ -2677,20 +2677,20 @@ gcolor3_color_selection_set_palette_color (Gcolor3ColorSelection *colorsel,
  *     a color around, and %FALSE if the selection has stopped
  */
 gboolean
-gcolor3_color_selection_is_adjusting (Gcolor3ColorSelection *colorsel)
+colpicker_color_selection_is_adjusting (ColPickerColorSelection *colorsel)
 {
-  Gcolor3ColorSelectionPrivate *priv;
+  ColPickerColorSelectionPrivate *priv;
 
-  g_return_val_if_fail (GCOLOR3_IS_COLOR_SELECTION (colorsel), FALSE);
+  g_return_val_if_fail (COLPICKER_IS_COLOR_SELECTION (colorsel), FALSE);
 
   priv = colorsel->private_data;
 
-  return (gcolor3_hsv_is_adjusting (GCOLOR3_HSV (priv->triangle_colorsel)));
+  return (colpicker_hsv_is_adjusting (COLPICKER_HSV (priv->triangle_colorsel)));
 }
 
 
 /**
- * gcolor3_color_selection_palette_from_string:
+ * colpicker_color_selection_palette_from_string:
  * @str: a string encoding a color palette
  * @colors: (out) (array length=n_colors): return location for
  *     allocated array of #GdkRGBA
@@ -2702,7 +2702,7 @@ gcolor3_color_selection_is_adjusting (Gcolor3ColorSelection *colorsel)
  * Returns: %TRUE if a palette was successfully parsed
  */
 gboolean
-gcolor3_color_selection_palette_from_string (const gchar  *str,
+colpicker_color_selection_palette_from_string (const gchar  *str,
                                              GdkRGBA    **colors,
                                              gint         *n_colors)
 {
@@ -2777,7 +2777,7 @@ gcolor3_color_selection_palette_from_string (const gchar  *str,
 }
 
 /**
- * gcolor3_color_selection_palette_to_string:
+ * colpicker_color_selection_palette_to_string:
  * @colors: (array length=n_colors): an array of colors
  * @n_colors: length of the array
  *
@@ -2786,7 +2786,7 @@ gcolor3_color_selection_palette_from_string (const gchar  *str,
  * Returns: allocated string encoding the palette
  */
 gchar*
-gcolor3_color_selection_palette_to_string (const GdkRGBA *colors,
+colpicker_color_selection_palette_to_string (const GdkRGBA *colors,
                                            gint           n_colors)
 {
   gint i;
@@ -2824,7 +2824,7 @@ gcolor3_color_selection_palette_to_string (const GdkRGBA *colors,
 }
 
 /**
- * gcolor3_color_selection_set_change_palette_with_screen_hook: (skip)
+ * colpicker_color_selection_set_change_palette_with_screen_hook: (skip)
  * @func: a function to call when the custom palette needs saving
  *
  * Installs a global function to be called whenever the user
@@ -2832,16 +2832,16 @@ gcolor3_color_selection_palette_to_string (const GdkRGBA *colors,
  *
  * This function should save the new palette contents, and update
  * the #GtkSettings:gtk-color-palette GtkSettings property so all
- * Gcolor3ColorSelection widgets will be modified.
+ * ColPickerColorSelection widgets will be modified.
  *
  * Returns: the previous change palette hook (that was replaced)
  *
  * Since: 2.2
  */
-Gcolor3ColorSelectionChangePaletteWithScreenFunc
-gcolor3_color_selection_set_change_palette_with_screen_hook (Gcolor3ColorSelectionChangePaletteWithScreenFunc func)
+ColPickerColorSelectionChangePaletteWithScreenFunc
+colpicker_color_selection_set_change_palette_with_screen_hook (ColPickerColorSelectionChangePaletteWithScreenFunc func)
 {
-  Gcolor3ColorSelectionChangePaletteWithScreenFunc old;
+  ColPickerColorSelectionChangePaletteWithScreenFunc old;
 
   old = change_palette_hook;
 
@@ -2863,7 +2863,7 @@ make_control_relations (AtkObject *atk_obj,
 
 static void
 make_all_relations (AtkObject                *atk_obj,
-                    Gcolor3ColorSelectionPrivate *priv)
+                    ColPickerColorSelectionPrivate *priv)
 {
   make_control_relations (atk_obj, priv->hue_spinbutton);
   make_control_relations (atk_obj, priv->sat_spinbutton);

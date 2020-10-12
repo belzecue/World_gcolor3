@@ -26,12 +26,12 @@
  * files for a list of changes.  These files are distributed with
  * GTK at ftp://ftp.gtk.org/pub/gtk/.
  *
- * Updated and adapted for inclusion in Gcolor3 by Jente Hidskes 2018
+ * Updated and adapted for inclusion in ColPicker by Jente Hidskes 2018
  */
 
 #include "config.h"
 
-#include "gcolor3-hsv.h"
+#include "colpicker-hsv.h"
 
 #include <math.h>
 #include <string.h>
@@ -41,10 +41,10 @@
 /**
  * SECTION:gtkhsv
  * @Short_description: A “color wheel” widget
- * @Title: Gcolor3HSV
- * @See_also: #Gcolor3ColorSelection, #Gcolor3ColorSelectionDialog
+ * @Title: ColPickerHSV
+ * @See_also: #ColPickerColorSelection, #ColPickerColorSelectionDialog
  *
- * #Gcolor3HSV is the “color wheel” part of a complete color selector widget.
+ * #ColPickerHSV is the “color wheel” part of a complete color selector widget.
  * It allows to select a color by determining its HSV components in an
  * intuitive way. Moving the selection around the outer ring changes the hue,
  * and moving the selection point inside the inner triangle changes value and
@@ -65,8 +65,8 @@ typedef enum {
   DRAG_SV
 } DragMode;
 
-/* Private part of the Gcolor3HSV structure */
-struct _Gcolor3HSVPrivate
+/* Private part of the ColPickerHSV structure */
+struct _ColPickerHSVPrivate
 {
   /* Color value */
   double h;
@@ -95,71 +95,71 @@ enum {
   LAST_SIGNAL
 };
 
-static void     gcolor3_hsv_destroy              (GtkWidget          *widget);
-static void     gcolor3_hsv_realize              (GtkWidget          *widget);
-static void     gcolor3_hsv_unrealize            (GtkWidget          *widget);
-static void     gcolor3_hsv_get_preferred_width  (GtkWidget          *widget,
+static void     colpicker_hsv_destroy              (GtkWidget          *widget);
+static void     colpicker_hsv_realize              (GtkWidget          *widget);
+static void     colpicker_hsv_unrealize            (GtkWidget          *widget);
+static void     colpicker_hsv_get_preferred_width  (GtkWidget          *widget,
                                                   gint               *minimum,
                                                   gint               *natural);
-static void     gcolor3_hsv_get_preferred_height (GtkWidget          *widget,
+static void     colpicker_hsv_get_preferred_height (GtkWidget          *widget,
                                                   gint               *minimum,
                                                   gint               *natural);
-static void     gcolor3_hsv_size_allocate        (GtkWidget          *widget,
+static void     colpicker_hsv_size_allocate        (GtkWidget          *widget,
                                                   GtkAllocation      *allocation);
-static gboolean gcolor3_hsv_button_press         (GtkWidget          *widget,
+static gboolean colpicker_hsv_button_press         (GtkWidget          *widget,
                                                   GdkEventButton     *event);
-static gboolean gcolor3_hsv_button_release       (GtkWidget          *widget,
+static gboolean colpicker_hsv_button_release       (GtkWidget          *widget,
                                                   GdkEventButton     *event);
-static gboolean gcolor3_hsv_motion               (GtkWidget          *widget,
+static gboolean colpicker_hsv_motion               (GtkWidget          *widget,
                                                   GdkEventMotion     *event);
-static gboolean gcolor3_hsv_draw                 (GtkWidget          *widget,
+static gboolean colpicker_hsv_draw                 (GtkWidget          *widget,
                                                   cairo_t            *cr);
-static gboolean gcolor3_hsv_grab_broken          (GtkWidget          *widget,
+static gboolean colpicker_hsv_grab_broken          (GtkWidget          *widget,
                                                   GdkEventGrabBroken *event);
-static gboolean gcolor3_hsv_focus                (GtkWidget          *widget,
+static gboolean colpicker_hsv_focus                (GtkWidget          *widget,
                                                   GtkDirectionType    direction);
-static void     gcolor3_hsv_move                 (Gcolor3HSV         *hsv,
+static void     colpicker_hsv_move                 (ColPickerHSV         *hsv,
                                                   GtkDirectionType    dir);
 
 static guint hsv_signals[LAST_SIGNAL];
 
-G_DEFINE_TYPE_WITH_PRIVATE (Gcolor3HSV, gcolor3_hsv, GTK_TYPE_WIDGET)
+G_DEFINE_TYPE_WITH_PRIVATE (ColPickerHSV, colpicker_hsv, GTK_TYPE_WIDGET)
 
 /* Class initialization function for the HSV color selector */
 static void
-gcolor3_hsv_class_init (Gcolor3HSVClass *class)
+colpicker_hsv_class_init (ColPickerHSVClass *class)
 {
   GObjectClass    *gobject_class;
   GtkWidgetClass  *widget_class;
-  Gcolor3HSVClass *hsv_class;
+  ColPickerHSVClass *hsv_class;
   GtkBindingSet   *binding_set;
 
   gobject_class = (GObjectClass *) class;
   widget_class = (GtkWidgetClass *) class;
-  hsv_class = GCOLOR3_HSV_CLASS (class);
+  hsv_class = COLPICKER_HSV_CLASS (class);
 
-  widget_class->destroy = gcolor3_hsv_destroy;
-  widget_class->realize = gcolor3_hsv_realize;
-  widget_class->unrealize = gcolor3_hsv_unrealize;
-  widget_class->get_preferred_width = gcolor3_hsv_get_preferred_width;
-  widget_class->get_preferred_height = gcolor3_hsv_get_preferred_height;
-  widget_class->size_allocate = gcolor3_hsv_size_allocate;
-  widget_class->button_press_event = gcolor3_hsv_button_press;
-  widget_class->button_release_event = gcolor3_hsv_button_release;
-  widget_class->motion_notify_event = gcolor3_hsv_motion;
-  widget_class->draw = gcolor3_hsv_draw;
-  widget_class->focus = gcolor3_hsv_focus;
-  widget_class->grab_broken_event = gcolor3_hsv_grab_broken;
+  widget_class->destroy = colpicker_hsv_destroy;
+  widget_class->realize = colpicker_hsv_realize;
+  widget_class->unrealize = colpicker_hsv_unrealize;
+  widget_class->get_preferred_width = colpicker_hsv_get_preferred_width;
+  widget_class->get_preferred_height = colpicker_hsv_get_preferred_height;
+  widget_class->size_allocate = colpicker_hsv_size_allocate;
+  widget_class->button_press_event = colpicker_hsv_button_press;
+  widget_class->button_release_event = colpicker_hsv_button_release;
+  widget_class->motion_notify_event = colpicker_hsv_motion;
+  widget_class->draw = colpicker_hsv_draw;
+  widget_class->focus = colpicker_hsv_focus;
+  widget_class->grab_broken_event = colpicker_hsv_grab_broken;
 
   gtk_widget_class_set_accessible_role (widget_class, ATK_ROLE_COLOR_CHOOSER);
 
-  hsv_class->move = gcolor3_hsv_move;
+  hsv_class->move = colpicker_hsv_move;
 
   hsv_signals[CHANGED] =
     g_signal_new ("changed",
                   G_OBJECT_CLASS_TYPE (gobject_class),
                   G_SIGNAL_RUN_FIRST,
-                  G_STRUCT_OFFSET (Gcolor3HSVClass, changed),
+                  G_STRUCT_OFFSET (ColPickerHSVClass, changed),
                   NULL, NULL,
                   NULL,
                   G_TYPE_NONE, 0);
@@ -168,7 +168,7 @@ gcolor3_hsv_class_init (Gcolor3HSVClass *class)
     g_signal_new ("move",
                   G_OBJECT_CLASS_TYPE (gobject_class),
                   G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
-                  G_STRUCT_OFFSET (Gcolor3HSVClass, move),
+                  G_STRUCT_OFFSET (ColPickerHSVClass, move),
                   NULL, NULL,
                   NULL,
                   G_TYPE_NONE, 1,
@@ -203,11 +203,11 @@ gcolor3_hsv_class_init (Gcolor3HSVClass *class)
 }
 
 static void
-gcolor3_hsv_init (Gcolor3HSV *hsv)
+colpicker_hsv_init (ColPickerHSV *hsv)
 {
-  Gcolor3HSVPrivate *priv;
+  ColPickerHSVPrivate *priv;
 
-  priv = gcolor3_hsv_get_instance_private (hsv);
+  priv = colpicker_hsv_get_instance_private (hsv);
   hsv->priv = priv;
 
   gtk_widget_set_has_window (GTK_WIDGET (hsv), FALSE);
@@ -222,16 +222,16 @@ gcolor3_hsv_init (Gcolor3HSV *hsv)
 }
 
 static void
-gcolor3_hsv_destroy (GtkWidget *widget)
+colpicker_hsv_destroy (GtkWidget *widget)
 {
-  GTK_WIDGET_CLASS (gcolor3_hsv_parent_class)->destroy (widget);
+  GTK_WIDGET_CLASS (colpicker_hsv_parent_class)->destroy (widget);
 }
 
 static void
-gcolor3_hsv_realize (GtkWidget *widget)
+colpicker_hsv_realize (GtkWidget *widget)
 {
-  Gcolor3HSV *hsv = GCOLOR3_HSV (widget);
-  Gcolor3HSVPrivate *priv = hsv->priv;
+  ColPickerHSV *hsv = COLPICKER_HSV (widget);
+  ColPickerHSVPrivate *priv = hsv->priv;
   GtkAllocation allocation;
   GdkWindow *parent_window;
   GdkWindowAttr attr;
@@ -266,25 +266,25 @@ gcolor3_hsv_realize (GtkWidget *widget)
 }
 
 static void
-gcolor3_hsv_unrealize (GtkWidget *widget)
+colpicker_hsv_unrealize (GtkWidget *widget)
 {
-  Gcolor3HSV *hsv = GCOLOR3_HSV (widget);
-  Gcolor3HSVPrivate *priv = hsv->priv;
+  ColPickerHSV *hsv = COLPICKER_HSV (widget);
+  ColPickerHSVPrivate *priv = hsv->priv;
 
   gdk_window_set_user_data (priv->window, NULL);
   gdk_window_destroy (priv->window);
   priv->window = NULL;
 
-  GTK_WIDGET_CLASS (gcolor3_hsv_parent_class)->unrealize (widget);
+  GTK_WIDGET_CLASS (colpicker_hsv_parent_class)->unrealize (widget);
 }
 
 static void
-gcolor3_hsv_get_preferred_width (GtkWidget *widget,
+colpicker_hsv_get_preferred_width (GtkWidget *widget,
                                  gint      *minimum,
                                  gint      *natural)
 {
-  Gcolor3HSV *hsv = GCOLOR3_HSV (widget);
-  Gcolor3HSVPrivate *priv = hsv->priv;
+  ColPickerHSV *hsv = COLPICKER_HSV (widget);
+  ColPickerHSVPrivate *priv = hsv->priv;
   gint focus_width;
   gint focus_pad;
 
@@ -298,12 +298,12 @@ gcolor3_hsv_get_preferred_width (GtkWidget *widget,
 }
 
 static void
-gcolor3_hsv_get_preferred_height (GtkWidget *widget,
+colpicker_hsv_get_preferred_height (GtkWidget *widget,
                                   gint      *minimum,
                                   gint      *natural)
 {
-  Gcolor3HSV *hsv = GCOLOR3_HSV (widget);
-  Gcolor3HSVPrivate *priv = hsv->priv;
+  ColPickerHSV *hsv = COLPICKER_HSV (widget);
+  ColPickerHSVPrivate *priv = hsv->priv;
   gint focus_width;
   gint focus_pad;
 
@@ -317,11 +317,11 @@ gcolor3_hsv_get_preferred_height (GtkWidget *widget,
 }
 
 static void
-gcolor3_hsv_size_allocate (GtkWidget     *widget,
+colpicker_hsv_size_allocate (GtkWidget     *widget,
                            GtkAllocation *allocation)
 {
-  Gcolor3HSV *hsv = GCOLOR3_HSV (widget);
-  Gcolor3HSVPrivate *priv = hsv->priv;
+  ColPickerHSV *hsv = COLPICKER_HSV (widget);
+  ColPickerHSVPrivate *priv = hsv->priv;
 
   gtk_widget_set_allocation (widget, allocation);
 
@@ -413,7 +413,7 @@ hsv_to_rgb (gdouble *h,
 
 /* Computes the vertices of the saturation/value triangle */
 static void
-compute_triangle (Gcolor3HSV *hsv,
+compute_triangle (ColPickerHSV *hsv,
                   gint       *hx,
                   gint       *hy,
                   gint       *sx,
@@ -421,7 +421,7 @@ compute_triangle (Gcolor3HSV *hsv,
                   gint       *vx,
                   gint       *vy)
 {
-  Gcolor3HSVPrivate *priv = hsv->priv;
+  ColPickerHSVPrivate *priv = hsv->priv;
   GtkWidget *widget = GTK_WIDGET (hsv);
   gdouble center_x;
   gdouble center_y;
@@ -444,11 +444,11 @@ compute_triangle (Gcolor3HSV *hsv,
 
 /* Computes whether a point is inside the hue ring */
 static gboolean
-is_in_ring (Gcolor3HSV *hsv,
+is_in_ring (ColPickerHSV *hsv,
             gdouble     x,
             gdouble     y)
 {
-  Gcolor3HSVPrivate *priv = hsv->priv;
+  ColPickerHSVPrivate *priv = hsv->priv;
   GtkWidget *widget = GTK_WIDGET (hsv);
   gdouble dx, dy, dist;
   gdouble center_x;
@@ -469,7 +469,7 @@ is_in_ring (Gcolor3HSV *hsv,
 
 /* Computes a saturation/value pair based on the mouse coordinates */
 static void
-compute_sv (Gcolor3HSV  *hsv,
+compute_sv (ColPickerHSV  *hsv,
             gdouble      x,
             gdouble      y,
             gdouble     *s,
@@ -556,7 +556,7 @@ compute_sv (Gcolor3HSV  *hsv,
 
 /* Computes whether a point is inside the saturation/value triangle */
 static gboolean
-is_in_triangle (Gcolor3HSV *hsv,
+is_in_triangle (ColPickerHSV *hsv,
                 gdouble     x,
                 gdouble     y)
 {
@@ -575,7 +575,7 @@ is_in_triangle (Gcolor3HSV *hsv,
 
 /* Computes a value based on the mouse coordinates */
 static double
-compute_v (Gcolor3HSV *hsv,
+compute_v (ColPickerHSV *hsv,
            gdouble     x,
            gdouble     y)
 {
@@ -600,11 +600,11 @@ compute_v (Gcolor3HSV *hsv,
 /* Event handlers */
 
 static void
-set_cross_grab (Gcolor3HSV *hsv,
+set_cross_grab (ColPickerHSV *hsv,
                 GdkDevice  *device,
                 guint32     time)
 {
-  Gcolor3HSVPrivate *priv = hsv->priv;
+  ColPickerHSVPrivate *priv = hsv->priv;
   GdkCursor *cursor;
 
   cursor = gdk_cursor_new_for_display (gtk_widget_get_display (GTK_WIDGET (hsv)),
@@ -621,11 +621,11 @@ set_cross_grab (Gcolor3HSV *hsv,
 }
 
 static gboolean
-gcolor3_hsv_grab_broken (GtkWidget                 *widget,
+colpicker_hsv_grab_broken (GtkWidget                 *widget,
                          UNUSED GdkEventGrabBroken *event)
 {
-  Gcolor3HSV *hsv = GCOLOR3_HSV (widget);
-  Gcolor3HSVPrivate *priv = hsv->priv;
+  ColPickerHSV *hsv = COLPICKER_HSV (widget);
+  ColPickerHSVPrivate *priv = hsv->priv;
 
   priv->mode = DRAG_NONE;
 
@@ -633,11 +633,11 @@ gcolor3_hsv_grab_broken (GtkWidget                 *widget,
 }
 
 static gint
-gcolor3_hsv_button_press (GtkWidget      *widget,
+colpicker_hsv_button_press (GtkWidget      *widget,
                           GdkEventButton *event)
 {
-  Gcolor3HSV *hsv = GCOLOR3_HSV (widget);
-  Gcolor3HSVPrivate *priv = hsv->priv;
+  ColPickerHSV *hsv = COLPICKER_HSV (widget);
+  ColPickerHSVPrivate *priv = hsv->priv;
   double x, y;
 
   if (priv->mode != DRAG_NONE || event->button != GDK_BUTTON_PRIMARY)
@@ -651,7 +651,7 @@ gcolor3_hsv_button_press (GtkWidget      *widget,
       priv->mode = DRAG_H;
       set_cross_grab (hsv, gdk_event_get_device ((GdkEvent *) event), event->time);
 
-      gcolor3_hsv_set_color (hsv,
+      colpicker_hsv_set_color (hsv,
                          compute_v (hsv, x, y),
                          priv->s,
                          priv->v);
@@ -670,7 +670,7 @@ gcolor3_hsv_button_press (GtkWidget      *widget,
       set_cross_grab (hsv, gdk_event_get_device ((GdkEvent *) event), event->time);
 
       compute_sv (hsv, x, y, &s, &v);
-      gcolor3_hsv_set_color (hsv, priv->h, s, v);
+      colpicker_hsv_set_color (hsv, priv->h, s, v);
 
       gtk_widget_grab_focus (widget);
       priv->focus_on_ring = FALSE;
@@ -682,11 +682,11 @@ gcolor3_hsv_button_press (GtkWidget      *widget,
 }
 
 static gint
-gcolor3_hsv_button_release (GtkWidget      *widget,
+colpicker_hsv_button_release (GtkWidget      *widget,
                             GdkEventButton *event)
 {
-  Gcolor3HSV *hsv = GCOLOR3_HSV (widget);
-  Gcolor3HSVPrivate *priv = hsv->priv;
+  ColPickerHSV *hsv = COLPICKER_HSV (widget);
+  ColPickerHSVPrivate *priv = hsv->priv;
   DragMode mode;
   gdouble x, y;
 
@@ -704,14 +704,14 @@ gcolor3_hsv_button_release (GtkWidget      *widget,
 
   if (mode == DRAG_H)
     {
-      gcolor3_hsv_set_color (hsv, compute_v (hsv, x, y), priv->s, priv->v);
+      colpicker_hsv_set_color (hsv, compute_v (hsv, x, y), priv->s, priv->v);
     }
   else if (mode == DRAG_SV)
     {
       gdouble s, v;
 
       compute_sv (hsv, x, y, &s, &v);
-      gcolor3_hsv_set_color (hsv, priv->h, s, v);
+      colpicker_hsv_set_color (hsv, priv->h, s, v);
     }
   else
     {
@@ -724,11 +724,11 @@ gcolor3_hsv_button_release (GtkWidget      *widget,
 }
 
 static gint
-gcolor3_hsv_motion (GtkWidget      *widget,
+colpicker_hsv_motion (GtkWidget      *widget,
                     GdkEventMotion *event)
 {
-  Gcolor3HSV *hsv = GCOLOR3_HSV (widget);
-  Gcolor3HSVPrivate *priv = hsv->priv;
+  ColPickerHSV *hsv = COLPICKER_HSV (widget);
+  ColPickerHSVPrivate *priv = hsv->priv;
   gdouble x, y;
 
   if (priv->mode == DRAG_NONE)
@@ -740,7 +740,7 @@ gcolor3_hsv_motion (GtkWidget      *widget,
 
   if (priv->mode == DRAG_H)
     {
-      gcolor3_hsv_set_color (hsv, compute_v (hsv, x, y), priv->s, priv->v);
+      colpicker_hsv_set_color (hsv, compute_v (hsv, x, y), priv->s, priv->v);
       return TRUE;
     }
   else if (priv->mode == DRAG_SV)
@@ -748,7 +748,7 @@ gcolor3_hsv_motion (GtkWidget      *widget,
       gdouble s, v;
 
       compute_sv (hsv, x, y, &s, &v);
-      gcolor3_hsv_set_color (hsv, priv->h, s, v);
+      colpicker_hsv_set_color (hsv, priv->h, s, v);
       return TRUE;
     }
 
@@ -762,10 +762,10 @@ gcolor3_hsv_motion (GtkWidget      *widget,
 
 /* Paints the hue ring */
 static void
-paint_ring (Gcolor3HSV *hsv,
+paint_ring (ColPickerHSV *hsv,
             cairo_t    *cr)
 {
-  Gcolor3HSVPrivate *priv = hsv->priv;
+  ColPickerHSVPrivate *priv = hsv->priv;
   GtkWidget *widget = GTK_WIDGET (hsv);
   int xx, yy, width, height;
   gdouble dx, dy, dist;
@@ -903,11 +903,11 @@ get_color (gdouble h,
 
 /* Paints the HSV triangle */
 static void
-paint_triangle (Gcolor3HSV *hsv,
+paint_triangle (ColPickerHSV *hsv,
                 cairo_t    *cr,
                 gboolean    draw_focus)
 {
-  Gcolor3HSVPrivate *priv = hsv->priv;
+  ColPickerHSVPrivate *priv = hsv->priv;
   GtkWidget *widget = GTK_WIDGET (hsv);
   gint hx, hy, sx, sy, vx, vy; /* HSV vertices */
   gint x1, y1, r1, g1, b1; /* First vertex in scanline order */
@@ -1112,11 +1112,11 @@ paint_triangle (Gcolor3HSV *hsv,
 
 /* Paints the contents of the HSV color selector */
 static gboolean
-gcolor3_hsv_draw (GtkWidget *widget,
+colpicker_hsv_draw (GtkWidget *widget,
                   cairo_t   *cr)
 {
-  Gcolor3HSV *hsv = GCOLOR3_HSV (widget);
-  Gcolor3HSVPrivate *priv = hsv->priv;
+  ColPickerHSV *hsv = COLPICKER_HSV (widget);
+  ColPickerHSVPrivate *priv = hsv->priv;
   gboolean draw_focus;
 
   draw_focus = gtk_widget_has_visible_focus (widget);
@@ -1140,11 +1140,11 @@ gcolor3_hsv_draw (GtkWidget *widget,
 }
 
 static gboolean
-gcolor3_hsv_focus (GtkWidget       *widget,
+colpicker_hsv_focus (GtkWidget       *widget,
                    GtkDirectionType dir)
 {
-  Gcolor3HSV *hsv = GCOLOR3_HSV (widget);
-  Gcolor3HSVPrivate *priv = hsv->priv;
+  ColPickerHSV *hsv = COLPICKER_HSV (widget);
+  ColPickerHSVPrivate *priv = hsv->priv;
 
   if (!gtk_widget_has_focus (widget))
     {
@@ -1196,7 +1196,7 @@ gcolor3_hsv_focus (GtkWidget       *widget,
 }
 
 /**
- * gcolor3_hsv_new:
+ * colpicker_hsv_new:
  *
  * Creates a new HSV color selector.
  *
@@ -1205,13 +1205,13 @@ gcolor3_hsv_focus (GtkWidget       *widget,
  * Since: 2.14
  */
 GtkWidget*
-gcolor3_hsv_new (void)
+colpicker_hsv_new (void)
 {
-  return g_object_new (GCOLOR3_TYPE_HSV, NULL);
+  return g_object_new (COLPICKER_TYPE_HSV, NULL);
 }
 
 /**
- * gcolor3_hsv_set_color:
+ * colpicker_hsv_set_color:
  * @hsv: An HSV color selector
  * @h: Hue
  * @s: Saturation
@@ -1223,14 +1223,14 @@ gcolor3_hsv_new (void)
  * Since: 2.14
  */
 void
-gcolor3_hsv_set_color (Gcolor3HSV *hsv,
+colpicker_hsv_set_color (ColPickerHSV *hsv,
                        gdouble     h,
                        gdouble     s,
                        gdouble     v)
 {
-  Gcolor3HSVPrivate *priv;
+  ColPickerHSVPrivate *priv;
 
-  g_return_if_fail (GCOLOR3_IS_HSV (hsv));
+  g_return_if_fail (COLPICKER_IS_HSV (hsv));
   g_return_if_fail (h >= 0.0 && h <= 1.0);
   g_return_if_fail (s >= 0.0 && s <= 1.0);
   g_return_if_fail (v >= 0.0 && v <= 1.0);
@@ -1247,7 +1247,7 @@ gcolor3_hsv_set_color (Gcolor3HSV *hsv,
 }
 
 /**
- * gcolor3_hsv_get_color:
+ * colpicker_hsv_get_color:
  * @hsv: An HSV color selector
  * @h: (out): Return value for the hue
  * @s: (out): Return value for the saturation
@@ -1259,14 +1259,14 @@ gcolor3_hsv_set_color (Gcolor3HSV *hsv,
  * Since: 2.14
  */
 void
-gcolor3_hsv_get_color (Gcolor3HSV *hsv,
+colpicker_hsv_get_color (ColPickerHSV *hsv,
                        double     *h,
                        double     *s,
                        double     *v)
 {
-  Gcolor3HSVPrivate *priv;
+  ColPickerHSVPrivate *priv;
 
-  g_return_if_fail (GCOLOR3_IS_HSV (hsv));
+  g_return_if_fail (COLPICKER_IS_HSV (hsv));
 
   priv = hsv->priv;
 
@@ -1281,7 +1281,7 @@ gcolor3_hsv_get_color (Gcolor3HSV *hsv,
 }
 
 /**
- * gcolor3_hsv_set_metrics:
+ * colpicker_hsv_set_metrics:
  * @hsv: An HSV color selector
  * @size: Diameter for the hue ring
  * @ring_width: Width of the hue ring
@@ -1291,14 +1291,14 @@ gcolor3_hsv_get_color (Gcolor3HSV *hsv,
  * Since: 2.14
  */
 void
-gcolor3_hsv_set_metrics (Gcolor3HSV *hsv,
+colpicker_hsv_set_metrics (ColPickerHSV *hsv,
                          gint        size,
                          gint        ring_width)
 {
-  Gcolor3HSVPrivate *priv;
+  ColPickerHSVPrivate *priv;
   int same_size;
 
-  g_return_if_fail (GCOLOR3_IS_HSV (hsv));
+  g_return_if_fail (COLPICKER_IS_HSV (hsv));
   g_return_if_fail (size > 0);
   g_return_if_fail (ring_width > 0);
   g_return_if_fail (2 * ring_width + 1 <= size);
@@ -1317,7 +1317,7 @@ gcolor3_hsv_set_metrics (Gcolor3HSV *hsv,
 }
 
 /**
- * gcolor3_hsv_get_metrics:
+ * colpicker_hsv_get_metrics:
  * @hsv: An HSV color selector
  * @size: (out): Return value for the diameter of the hue ring
  * @ring_width: (out): Return value for the width of the hue ring
@@ -1327,13 +1327,13 @@ gcolor3_hsv_set_metrics (Gcolor3HSV *hsv,
  * Since: 2.14
  */
 void
-gcolor3_hsv_get_metrics (Gcolor3HSV *hsv,
+colpicker_hsv_get_metrics (ColPickerHSV *hsv,
                          gint       *size,
                          gint       *ring_width)
 {
-  Gcolor3HSVPrivate *priv;
+  ColPickerHSVPrivate *priv;
 
-  g_return_if_fail (GCOLOR3_IS_HSV (hsv));
+  g_return_if_fail (COLPICKER_IS_HSV (hsv));
 
   priv = hsv->priv;
 
@@ -1345,8 +1345,8 @@ gcolor3_hsv_get_metrics (Gcolor3HSV *hsv,
 }
 
 /**
- * gcolor3_hsv_is_adjusting:
- * @hsv: A #Gcolor3HSV 
+ * colpicker_hsv_is_adjusting:
+ * @hsv: A #ColPickerHSV
  *
  * An HSV color selector can be said to be adjusting if multiple rapid
  * changes are being made to its value, for example, when the user is 
@@ -1360,11 +1360,11 @@ gcolor3_hsv_get_metrics (Gcolor3HSV *hsv,
  * Since: 2.14
  */
 gboolean
-gcolor3_hsv_is_adjusting (Gcolor3HSV *hsv)
+colpicker_hsv_is_adjusting (ColPickerHSV *hsv)
 {
-  Gcolor3HSVPrivate *priv;
+  ColPickerHSVPrivate *priv;
 
-  g_return_val_if_fail (GCOLOR3_IS_HSV (hsv), FALSE);
+  g_return_val_if_fail (COLPICKER_IS_HSV (hsv), FALSE);
 
   priv = hsv->priv;
 
@@ -1372,10 +1372,10 @@ gcolor3_hsv_is_adjusting (Gcolor3HSV *hsv)
 }
 
 static void
-gcolor3_hsv_move (Gcolor3HSV       *hsv,
+colpicker_hsv_move (ColPickerHSV       *hsv,
                   GtkDirectionType  dir)
 {
-  Gcolor3HSVPrivate *priv = hsv->priv;
+  ColPickerHSVPrivate *priv = hsv->priv;
   gdouble hue, sat, val;
   gint hx, hy, sx, sy, vx, vy; /* HSV vertices */
   gint x, y; /* position in triangle */
@@ -1444,5 +1444,5 @@ gcolor3_hsv_move (Gcolor3HSV       *hsv,
   else if (hue > 1.0)
     hue = 0.0;
   
-  gcolor3_hsv_set_color (hsv, hue, sat, val);
+  colpicker_hsv_set_color (hsv, hue, sat, val);
 }

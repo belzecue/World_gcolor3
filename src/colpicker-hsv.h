@@ -26,45 +26,45 @@
  * files for a list of changes.  These files are distributed with
  * GTK at ftp://ftp.gtk.org/pub/gtk/.
  *
- * Updated and adapted for inclusion in Gcolor3 by Jente Hidskes 2018.
+ * Updated and adapted for inclusion in ColPicker by Jente Hidskes 2018.
  */
 
-#ifndef __GCOLOR3_HSV_H__
-#define __GCOLOR3_HSV_H__
+#ifndef __COLPICKER_HSV_H__
+#define __COLPICKER_HSV_H__
 
 #include <gtk/gtk.h>
 
 G_BEGIN_DECLS
 
-#define GCOLOR3_TYPE_HSV            (gcolor3_hsv_get_type ())
-#define GCOLOR3_HSV(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), GCOLOR3_TYPE_HSV, Gcolor3HSV))
-#define GCOLOR3_HSV_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), GCOLOR3_TYPE_HSV, Gcolor3HSVClass))
-#define GCOLOR3_IS_HSV(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GCOLOR3_TYPE_HSV))
-#define GCOLOR3_IS_HSV_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), GCOLOR3_TYPE_HSV))
-#define GCOLOR3_HSV_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), GCOLOR3_TYPE_HSV, Gcolor3HSVClass))
+#define COLPICKER_TYPE_HSV            (colpicker_hsv_get_type ())
+#define COLPICKER_HSV(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), COLPICKER_TYPE_HSV, ColPickerHSV))
+#define COLPICKER_HSV_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), COLPICKER_TYPE_HSV, ColPickerHSVClass))
+#define COLPICKER_IS_HSV(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), COLPICKER_TYPE_HSV))
+#define COLPICKER_IS_HSV_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), COLPICKER_TYPE_HSV))
+#define COLPICKER_HSV_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), COLPICKER_TYPE_HSV, ColPickerHSVClass))
 
 
-typedef struct _Gcolor3HSV              Gcolor3HSV;
-typedef struct _Gcolor3HSVPrivate       Gcolor3HSVPrivate;
-typedef struct _Gcolor3HSVClass         Gcolor3HSVClass;
+typedef struct _ColPickerHSV              ColPickerHSV;
+typedef struct _ColPickerHSVPrivate       ColPickerHSVPrivate;
+typedef struct _ColPickerHSVClass         ColPickerHSVClass;
 
-struct _Gcolor3HSV
+struct _ColPickerHSV
 {
   GtkWidget parent_instance;
 
   /*< private >*/
-  Gcolor3HSVPrivate *priv;
+  ColPickerHSVPrivate *priv;
 };
 
-struct _Gcolor3HSVClass
+struct _ColPickerHSVClass
 {
   GtkWidgetClass parent_class;
 
   /* Notification signals */
-  void (* changed) (Gcolor3HSV       *hsv);
+  void (* changed) (ColPickerHSV       *hsv);
 
   /* Keybindings */
-  void (* move)    (Gcolor3HSV       *hsv,
+  void (* move)    (ColPickerHSV       *hsv,
                     GtkDirectionType  type);
 
   /* Padding for future expansion */
@@ -75,24 +75,24 @@ struct _Gcolor3HSVClass
 };
 
 
-GType      gcolor3_hsv_get_type     (void) G_GNUC_CONST;
-GtkWidget* gcolor3_hsv_new          (void);
-void       gcolor3_hsv_set_color    (Gcolor3HSV    *hsv,
+GType      colpicker_hsv_get_type     (void) G_GNUC_CONST;
+GtkWidget* colpicker_hsv_new          (void);
+void       colpicker_hsv_set_color    (ColPickerHSV    *hsv,
 				     double         h,
 				     double         s,
 				     double         v);
-void       gcolor3_hsv_get_color    (Gcolor3HSV    *hsv,
+void       colpicker_hsv_get_color    (ColPickerHSV    *hsv,
 				     gdouble       *h,
 				     gdouble       *s,
 				     gdouble       *v);
-void       gcolor3_hsv_set_metrics  (Gcolor3HSV    *hsv,
+void       colpicker_hsv_set_metrics  (ColPickerHSV    *hsv,
 				     gint           size,
 				     gint           ring_width);
-void       gcolor3_hsv_get_metrics  (Gcolor3HSV    *hsv,
+void       colpicker_hsv_get_metrics  (ColPickerHSV    *hsv,
 				     gint          *size,
 				     gint          *ring_width);
-gboolean   gcolor3_hsv_is_adjusting (Gcolor3HSV    *hsv);
+gboolean   colpicker_hsv_is_adjusting (ColPickerHSV    *hsv);
 
 G_END_DECLS
 
-#endif /* __GCOLOR3_HSV_H__ */
+#endif /* __COLPICKER_HSV_H__ */

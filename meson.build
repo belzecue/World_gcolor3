@@ -1,4 +1,4 @@
-project('gcolor3', 'c', version: '2.4.0',
+project('gnome-color-picker', 'c', version: '3.0.0',
   license: 'GPL2+',
   meson_version: '>= 0.40.0',
 )
@@ -20,15 +20,17 @@ prefix = get_option('prefix')
 bindir = join_paths(prefix, get_option('bindir'))
 datadir = join_paths(prefix, get_option('datadir'))
 localedir = join_paths(prefix, get_option('localedir'))
+app_id = 'org.gnome.design.ColorPicker'
 
 subdir('data')
 subdir('src')
 subdir('po')
 
 defines = [
+  ['APP_ID', app_id],
   ['PACKAGE', meson.project_name()],
   ['PACKAGE_NAME', meson.project_name()],
-  ['PACKAGE_URL', 'https://hjdskes.nl/projects/gcolor3'],
+  ['PACKAGE_URL', 'https://gitlab.gnome.org/World/gcolor3'],
   ['PACKAGE_VERSION', meson.project_version()],
   ['GETTEXT_PACKAGE', meson.project_name()],
   ['LOCALE_DIR', localedir],
